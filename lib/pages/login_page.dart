@@ -18,6 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  // Variable to control password visibility
+  bool _isPasswordVisible = false;
+
   Future signIn() async {
   // Show loading circle
   showDialog(
@@ -35,11 +38,12 @@ class _LoginPageState extends State<LoginPage> {
     );
     
     // Pop the loading circle if login is successful
-    if (context.mounted) Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
     
   } on FirebaseAuthException catch (e) {
     // Pop the loading circle before showing the error message
-    Navigator.pop(context);
+    if (mounted) Navigator.pop(context);
+    
     if (e.code == 'invalid-email') {
       displayMessage('The email address is not valid.');
     }
@@ -88,10 +92,10 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.android,
-                size: 150,
+                Icon(Icons.health_and_safety,
+                size: 200,
                 ),
-                SizedBox(height: 50),
+                SizedBox(height: 30),
             
                 // Hello again!
                 Text(
@@ -136,7 +140,7 @@ class _LoginPageState extends State<LoginPage> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 25.0),
                   child: TextField(
-                    obscureText: true,
+                    obscureText: !_isPasswordVisible,
                     controller: _passwordController,
                     decoration: InputDecoration(
                       enabledBorder: OutlineInputBorder(
@@ -150,9 +154,22 @@ class _LoginPageState extends State<LoginPage> {
                       hintText: 'Password',
                       fillColor: Colors.grey[200],
                       filled: true,
+                      suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility
+                                : Icons.visibility_off,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        )),
                     ),
                   ),
-                ),
+              
+                
 
                 SizedBox(height: 10),
                 Padding(
