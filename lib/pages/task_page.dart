@@ -2,7 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase_project/pages/activity_box.dart';
+import 'package:flutter_firebase_project/pages/task_box.dart';
 
 class TaskPage extends StatefulWidget {
   const TaskPage({Key? key}) : super(key: key);
@@ -65,6 +65,8 @@ Future<void> fetchUserPoints() async {
 
     if (activityList[index][1]) {
       Timer.periodic(const Duration(seconds: 1), (timer) {
+          if (!mounted) return;
+          
         setState(() {
           if (!activityList[index][1]) {
             timer.cancel();
@@ -119,7 +121,7 @@ Future<void> fetchUserPoints() async {
         title: Row(
           children: [
             const Text("Task"),
-            
+             
             const Icon(Icons.star,
               color: Colors.amber,
               ),

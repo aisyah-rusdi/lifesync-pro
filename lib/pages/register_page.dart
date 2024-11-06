@@ -98,7 +98,8 @@ class _RegisterPageState extends State<RegisterPage> {
         'weight': weight,
         'height': height,
         'points':0,
-      });
+      }
+    );
 }
 
 
