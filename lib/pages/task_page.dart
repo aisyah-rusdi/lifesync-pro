@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/activity_box.dart';
 
@@ -10,12 +12,48 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPage extends State<TaskPage> {
+  int userPoints = 0;
   List activityList = [
     ['Exercise', false, 0, 60],
     ['Read', false, 0, 1800],
     ['Meditate', false, 0, 1800],
     ['Code', false, 0, 1800],
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    fetchUserPoints();
+  }
+
+  Future<void> addPoints(int pointsToAdd) async {
+  final userDoc = FirebaseFirestore.instance
+    .collection('users')
+    .doc(FirebaseAuth.instance.currentUser!.uid);
+
+  // Use a transaction to safely update the points field
+  await FirebaseFirestore.instance.runTransaction((transaction) async {
+    final snapshot = await transaction.get(userDoc);
+    final currentPoints = snapshot['points'] ?? 0; // Default to 0 if field does not exist
+    transaction.update(userDoc, {'points': currentPoints + pointsToAdd});
+  });
+}
+
+Future<void> fetchUserPoints() async {
+    try {
+      final userDoc = FirebaseFirestore.instance
+          .collection('users')
+          .doc(FirebaseAuth.instance.currentUser!.uid);
+      final snapshot = await userDoc.get();
+      if (snapshot.exists) {
+        setState(() {
+          userPoints = snapshot['points'] ?? 0; // Get points or default to 0
+        });
+      }
+    } catch (e) {
+      print("Error fetching points: $e");
+    }
+  }
 
   void activityStarted(int index) {
     var startTime = DateTime.now();
@@ -26,7 +64,7 @@ class _TaskPage extends State<TaskPage> {
     });
 
     if (activityList[index][1]) {
-      Timer.periodic(Duration(seconds: 1), (timer) {
+      Timer.periodic(const Duration(seconds: 1), (timer) {
         setState(() {
           if (!activityList[index][1]) {
             timer.cancel();
@@ -48,23 +86,29 @@ class _TaskPage extends State<TaskPage> {
             showDialog(
               context: context,
               builder: (context) => AlertDialog(
-                title: Text('Congratulations!'),
+                title: const Text('Congratulations!'),
                 content: Text('You have completed the task: ${activityList[index][0]}'),
                 actions: [
                   TextButton(
                     onPressed: () {
                       Navigator.of(context).pop();
                     },
-                    child: Text('OK'),
+                    child: const Text('OK'),
                   ),
                 ],
               ),
             );
+            addPoints(1).then((_) {
+              setState(() {
+                userPoints += 1;
+              });
+            });
           }
         });
       });
     }
   }
+
 
   void settingsOpened(int index) {}
 
@@ -72,7 +116,24 @@ class _TaskPage extends State<TaskPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Task"),
+        title: Row(
+          children: [
+            const Text("Task"),
+            
+            const Icon(Icons.star,
+              color: Colors.amber,
+              ),
+
+            const SizedBox(width: 8,),
+            Text(userPoints.toString(), // Show user points
+                style: const TextStyle(
+                    color: Colors.black, 
+                    fontWeight: FontWeight.bold
+                    )
+                  ),
+          ],
+
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
@@ -82,6 +143,7 @@ class _TaskPage extends State<TaskPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        
       ),
       body: ListView.builder(
         itemCount: activityList.length,

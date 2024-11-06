@@ -90,7 +90,16 @@ class HomePage extends StatefulWidget{
     // Right side with points, notification, and profile icons
     Row(
       children: [
-        Icon(Icons.stars, size: 30), // Points icon
+        GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context, 
+              MaterialPageRoute(
+                builder: (context) => store()
+                )
+              );
+          },
+          child: Icon(Icons.shopping_cart, size: 30)), // Points icon
         SizedBox(width: 8),
         Icon(Icons.notifications, size: 30), // Notification icon
         SizedBox(width: 8),

@@ -97,6 +97,7 @@ class _RegisterPageState extends State<RegisterPage> {
         'age': age,
         'weight': weight,
         'height': height,
+        'points':0,
       });
 }
 
