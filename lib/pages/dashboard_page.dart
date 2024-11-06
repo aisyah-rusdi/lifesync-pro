@@ -98,6 +98,18 @@ class _DashboardState extends State<dashboard> {
     );
   }
 
+  Future<void> _deleteTask(String taskId) async {
+    if (_currentUser != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .doc(taskId)
+          .delete();
+      _fetchToDoList(); // Re-fetch the updated list
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,6 +171,7 @@ class _DashboardState extends State<dashboard> {
                           taskCompleted: task['completed'],
                           onChanged: (value) => _toggleTaskCompletion(
                               task['id'], task['completed']),
+                          deleteFunction: (context) => _deleteTask(task['id']),
                         );
                       },
                     ),
