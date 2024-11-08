@@ -113,77 +113,77 @@ class _DashboardState extends State<dashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 50.0),
+      body: SingleChildScrollView(
+  child: Column(
+    children: [
+      // To-Do List Container with "Add Task" button inside
+      Container(
+        width: double.infinity,
+        padding: EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(15),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.shade500,
+              offset: Offset(4.0, 4.0),
+              blurRadius: 15.0,
+              spreadRadius: 1.0,
+            ),
+            BoxShadow(
+              color: Colors.white,
+              offset: Offset(-4.0, -4.0),
+              blurRadius: 15.0,
+              spreadRadius: 1.0,
+            ),
+          ],
+        ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // To-Do List Container with "Add Task" button inside
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.shade500,
-                    offset: Offset(4.0, 4.0),
-                    blurRadius: 15.0,
-                    spreadRadius: 1.0,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'To-Do List',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
                   ),
-                  BoxShadow(
-                    color: Colors.white,
-                    offset: Offset(-4.0, -4.0),
-                    blurRadius: 15.0,
-                    spreadRadius: 1.0,
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'To-Do List',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: _showAddTaskDialog,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 10),
-                  // Using a Fixed Height for To-Do List
-                  SizedBox(
-                    height: 500, // Set a height for the ListView
-                    child: ListView.builder(
-                      itemCount: _toDoList.length,
-                      itemBuilder: (context, index) {
-                        final task = _toDoList[index];
-                        return TodoBox(
-                          taskName: task['taskName'],
-                          taskCompleted: task['completed'],
-                          onChanged: (value) => _toggleTaskCompletion(
-                              task['id'], task['completed']),
-                          deleteFunction: (context) => _deleteTask(task['id']),
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                ),
+                IconButton(
+                  icon: Icon(Icons.add),
+                  onPressed: _showAddTaskDialog,
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            // Using Expanded to prevent overflow
+            SizedBox(
+              height: 700,
+              child: ListView.builder(
+                itemCount: _toDoList.length,
+                itemBuilder: (context, index) {
+                  final task = _toDoList[index];
+                  return TodoBox(
+                    taskName: task['taskName'],
+                    taskCompleted: task['completed'],
+                    onChanged: (value) =>
+                        _toggleTaskCompletion(task['id'], task['completed']),
+                    deleteFunction: (context) => _deleteTask(task['id']),
+                  );
+                },
               ),
             ),
           ],
         ),
       ),
+    ],
+  ),
+),
 
-      // "Begin your task" as a floating action button at the bottom center
+
+      // floating action button
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: SizedBox(
         width: 100,

@@ -1,12 +1,11 @@
 // ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, prefer_final_fields
 
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase_project/pages/add_task_page.dart';
-import 'package:flutter_firebase_project/pages/challenge_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/add_task_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/challenge_page.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
 import 'package:flutter_firebase_project/pages/store_page.dart';
 
@@ -21,7 +20,7 @@ class HomePage extends StatefulWidget{
 
     final user = FirebaseAuth.instance.currentUser!;
     int _selectedIndex = 0;
-    String? userName;
+
 
     void _navigateBottomBar(int index) {
       setState(() {
@@ -34,28 +33,13 @@ class HomePage extends StatefulWidget{
       challenge(),
       add_task(),
       leaderboard(),
-      store(),
     ];
 
     @override
     void initState() {
       super.initState();
-      _fetchUserName(); // Fetch the user's name on initialization
     }
 
-  Future<void> _fetchUserName() async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      setState(() {
-        userName = userDoc['first name'] + " " + userDoc['last name'] ?? 'User'; // Fallback if name not found
-      });
-    } catch (e) {
-      print("Error fetching user data: $e");
-    }
-  }
 
     @override
     Widget build(BuildContext context) {
@@ -95,7 +79,7 @@ class HomePage extends StatefulWidget{
             Navigator.push(
               context, 
               MaterialPageRoute(
-                builder: (context) => store()
+                builder: (context) => StorePage()
                 )
               );
           },
@@ -108,15 +92,8 @@ class HomePage extends StatefulWidget{
             FirebaseAuth.instance.signOut();
           },
           child: Icon(Icons.logout, size: 30,),
-          )
-        /*GestureDetector( 
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => ProfilePage()),
-            );
-        },
-        child:  Icon(Icons.settings, size: 30)),*/ // Settings/Profile icon
+          ),
+
               ],
             ),
           ],
@@ -127,33 +104,8 @@ class HomePage extends StatefulWidget{
         ),
 
         body: _pages[_selectedIndex],
-        /*Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-                Expanded(
-                  child: FutureBuilder(
-                    future: getDocId(), 
-                    builder: (context, snapshot) {
-                      return ListView.builder(
-                        itemCount: docIDs.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              title: GetUserName(documentId: docIDs[index]),
-                              tileColor: Colors.grey[200],
-                                                  ),
-                          );
-                    },
-                  );
-                    },
-                  ),
-                ),
-            ],
-          ),
-        ),
-        bottomNavigationBar: BottomNavigationBar(
+        
+        /*bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _navigateBottomBar,
           type: BottomNavigationBarType.fixed,
