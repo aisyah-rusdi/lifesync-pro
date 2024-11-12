@@ -13,11 +13,13 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPage extends State<TaskPage> {
   int userPoints = 0;
+  
   List activityList = [
     ['Exercise', false, 0, 60],
     ['Read', false, 0, 1800],
     ['Meditate', false, 0, 1800],
     ['Code', false, 0, 1800],
+    ['Work', false, 0, 1800],
   ];
 
   @override
@@ -31,7 +33,7 @@ class _TaskPage extends State<TaskPage> {
     .collection('users')
     .doc(FirebaseAuth.instance.currentUser!.uid);
 
-  // Use a transaction to safely update the points field
+  // Use a transaction to safely update the points field (avoid race condition)
   await FirebaseFirestore.instance.runTransaction((transaction) async {
     final snapshot = await transaction.get(userDoc);
     final currentPoints = snapshot['points'] ?? 0; // Default to 0 if field does not exist
@@ -56,8 +58,8 @@ Future<void> fetchUserPoints() async {
   }
 
   void activityStarted(int index) {
-    var startTime = DateTime.now();
-    int elapsedTime = activityList[index][2];
+    var startTime = DateTime.now(); // current time
+    int elapsedTime = activityList[index][2]; // previously recorded time spent
 
     setState(() {
       activityList[index][1] = !activityList[index][1];
@@ -89,7 +91,7 @@ Future<void> fetchUserPoints() async {
               context: context,
               builder: (context) => AlertDialog(
                 title: const Text('Congratulations!'),
-                content: Text('You have completed the task: ${activityList[index][0]}'),
+                content: Text('You have completed the task: ${activityList[index][0]} .\nHave a nice rest for a longer journey'),
                 actions: [
                   TextButton(
                     onPressed: () {
@@ -121,7 +123,8 @@ Future<void> fetchUserPoints() async {
         title: Row(
           children: [
             const Text("Task"),
-             
+            
+            const SizedBox(width: 170,),
             const Icon(Icons.star,
               color: Colors.amber,
               ),
@@ -147,6 +150,7 @@ Future<void> fetchUserPoints() async {
         elevation: 0,
         
       ),
+
       body: ListView.builder(
         itemCount: activityList.length,
         itemBuilder: (context, index) {

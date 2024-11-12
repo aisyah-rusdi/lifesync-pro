@@ -103,10 +103,10 @@ class ActivityBox extends StatelessWidget{
                     ],
                   ),
                   
-                  GestureDetector(
+                  /*GestureDetector(
                     onTap: settingsTapped,
                     child: Icon(Icons.settings)
-                    ),
+                    ),*/
                 ],
               ),
             ),

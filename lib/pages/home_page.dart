@@ -2,12 +2,12 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/add_task_page.dart';
 import 'package:flutter_firebase_project/pages/developing%20feature/challenge_page.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
+//import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
-import 'package:flutter_firebase_project/pages/store_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/store_page.dart';
 
 class HomePage extends StatefulWidget{
   const HomePage({Key ? key}) : super(key : key);
@@ -31,8 +31,8 @@ class HomePage extends StatefulWidget{
     List<Widget>get _pages => [
       dashboard(),
       challenge(),
-      add_task(),
-      leaderboard(),
+      ToDoListPage(),
+      StorePage(),
     ];
 
     @override
@@ -74,17 +74,6 @@ class HomePage extends StatefulWidget{
     // Right side with points, notification, and profile icons
     Row(
       children: [
-        GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context, 
-              MaterialPageRoute(
-                builder: (context) => StorePage()
-                )
-              );
-          },
-          child: Icon(Icons.shopping_cart, size: 30)), // Points icon
-        SizedBox(width: 8),
         Icon(Icons.notifications, size: 30), // Notification icon
         SizedBox(width: 8),
         GestureDetector(
@@ -105,18 +94,18 @@ class HomePage extends StatefulWidget{
 
         body: _pages[_selectedIndex],
         
-        /*bottomNavigationBar: BottomNavigationBar(
+        bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _navigateBottomBar,
           type: BottomNavigationBarType.fixed,
           items:[
             BottomNavigationBarItem(icon: Icon(Icons.home), label:'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
-            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add task'),
-            BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
+            //BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
             BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label:'Store'),
           ],
-        ),*/
+        ),
       );
     }
   }

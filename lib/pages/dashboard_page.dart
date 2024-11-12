@@ -186,8 +186,8 @@ class _DashboardState extends State<dashboard> {
       // floating action button
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: SizedBox(
-        width: 100,
-        height: 100,
+        width: 130,
+        height: 130,
         child: FloatingActionButton(
           onPressed: () {
             Navigator.push(
@@ -195,7 +195,7 @@ class _DashboardState extends State<dashboard> {
               MaterialPageRoute(builder: (context) => TaskPage()),
             );
           },
-          child: Icon(Icons.play_arrow, size: 50), // Icon size to make it large
+          child: Icon(Icons.play_arrow, size: 70), // Icon size to make it large
           backgroundColor: const Color.fromARGB(255, 254, 118, 108),
           shape: CircleBorder(), // Ensures the button is circular
           elevation: 10, 
