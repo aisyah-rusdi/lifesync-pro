@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPage extends State<TaskPage> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
   int userPoints = 0;
   
   List activityList = [
@@ -58,60 +61,66 @@ Future<void> fetchUserPoints() async {
   }
 
   void activityStarted(int index) {
-    var startTime = DateTime.now(); // current time
-    int elapsedTime = activityList[index][2]; // previously recorded time spent
+  var startTime = DateTime.now();
+  int elapsedTime = activityList[index][2];
 
-    setState(() {
-      activityList[index][1] = !activityList[index][1];
-    });
+  setState(() {
+    activityList[index][1] = !activityList[index][1];
+  });
 
-    if (activityList[index][1]) {
-      Timer.periodic(const Duration(seconds: 1), (timer) {
-          if (!mounted) return;
-          
-        setState(() {
-          if (!activityList[index][1]) {
-            timer.cancel();
-          }
+  if (activityList[index][1]) {
+    Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return;
 
-          var currentTime = DateTime.now();
-          activityList[index][2] = elapsedTime +
-              currentTime.second - startTime.second +
-              60 * (currentTime.minute - startTime.minute) +
-              60 * 60 * (currentTime.hour - startTime.hour);
+      setState(() {
+        if (!activityList[index][1]) {
+          timer.cancel();
+        }
 
-          // Check if the task time goal is reached
-          if (activityList[index][2] > activityList[index][3]) {
-            timer.cancel(); // Stop the timer
-            activityList[index][1] = false; // Mark as stopped
-            activityList[index][2] = 0; // Reset elapsed time
+        var currentTime = DateTime.now();
+        activityList[index][2] = elapsedTime +
+            currentTime.second - startTime.second +
+            60 * (currentTime.minute - startTime.minute) +
+            60 * 60 * (currentTime.hour - startTime.hour);
 
-            // Show congratulations dialog
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('Congratulations!'),
-                content: Text('You have completed the task: ${activityList[index][0]} .\nHave a nice rest for a longer journey'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('OK'),
-                  ),
-                ],
-              ),
-            );
-            addPoints(1).then((_) {
-              setState(() {
-                userPoints += 1;
-              });
+        // Check if the task time goal is reached
+        if (activityList[index][2] > activityList[index][3]) {
+          timer.cancel(); 
+          activityList[index][1] = false; 
+          activityList[index][2] = 0;
+
+          // Play alarm sound
+          _audioPlayer.play(AssetSource('audio/waves_ios_7.mp3')); // Replace with your alarm file path
+
+          showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Congratulations!'),
+              content: Text(
+                  'You have completed the task: ${activityList[index][0]}. '
+                  '\nHave a nice rest for a longer journey'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _audioPlayer.stop(); // Stop the alarm
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('OK'),
+                ),
+              ],
+            ),
+          );
+          addPoints(1).then((_) {
+            setState(() {
+              userPoints += 1;
             });
-          }
-        });
+          });
+        }
       });
-    }
+    });
   }
+}
+
 
 
   void settingsOpened(int index) {}
