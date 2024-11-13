@@ -14,6 +14,7 @@ class TaskPage extends StatefulWidget {
 
 class _TaskPage extends State<TaskPage> {
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _focusSound = AudioPlayer();
 
   int userPoints = 0;
   
@@ -61,64 +62,108 @@ Future<void> fetchUserPoints() async {
   }
 
   void activityStarted(int index) {
+  // Check if another activity is already active
+  if (activityList.any((activity) => activity[1] && activity != activityList[index])) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Please pause the current activity before starting another.')),
+    );
+    return;
+  }
+
+  if (activityList[index][1]) {
+    // Activity is currently active, ask for confirmation to pause it
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Pause Activity'),
+        content: const Text('Are you sure you want to pause this activity?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('No'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              setState(() {
+                activityList[index][1] = false;
+              });
+              _focusSound.stop();
+            },
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    return;
+  }
+
+  // Start the selected activity
+  _focusSound.setReleaseMode(ReleaseMode.loop);
+  _focusSound.play(AssetSource('audio/focus.mp3'));
+
   var startTime = DateTime.now();
   int elapsedTime = activityList[index][2];
 
   setState(() {
-    activityList[index][1] = !activityList[index][1];
+    activityList[index][1] = true;
   });
 
-  if (activityList[index][1]) {
-    Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) return;
+  Timer.periodic(const Duration(seconds: 1), (timer) {
+    if (!mounted) return;
 
-      setState(() {
-        if (!activityList[index][1]) {
-          timer.cancel();
-        }
+    setState(() {
+      if (!activityList[index][1]) {
+        timer.cancel();
+        _focusSound.stop();
+      }
 
-        var currentTime = DateTime.now();
-        activityList[index][2] = elapsedTime +
-            currentTime.second - startTime.second +
-            60 * (currentTime.minute - startTime.minute) +
-            60 * 60 * (currentTime.hour - startTime.hour);
+      var currentTime = DateTime.now();
+      activityList[index][2] = elapsedTime +
+          currentTime.second - startTime.second +
+          60 * (currentTime.minute - startTime.minute) +
+          60 * 60 * (currentTime.hour - startTime.hour);
 
-        // Check if the task time goal is reached
-        if (activityList[index][2] > activityList[index][3]) {
-          timer.cancel(); 
-          activityList[index][1] = false; 
-          activityList[index][2] = 0;
+      // Check if the task time goal is reached
+      if (activityList[index][2] > activityList[index][3]) {
+        timer.cancel();
+        activityList[index][1] = false;
+        activityList[index][2] = 0;
 
-          // Play alarm sound
-          _audioPlayer.play(AssetSource('audio/waves_ios_7.mp3')); // Replace with your alarm file path
+        _focusSound.stop();  // Stop looping sound when time goal is reached
 
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Congratulations!'),
-              content: Text(
-                  'You have completed the task: ${activityList[index][0]}. '
-                  '\nHave a nice rest for a longer journey'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    _audioPlayer.stop(); // Stop the alarm
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-          addPoints(1).then((_) {
-            setState(() {
-              userPoints += 1;
-            });
+        // Play alarm sound
+        _audioPlayer.play(AssetSource('audio/alarm.mp3'));
+
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Congratulations!'),
+            content: Text(
+                'You have completed the task: ${activityList[index][0]}. '
+                '\nHave a nice rest for a longer journey'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _audioPlayer.stop(); // Stop the alarm
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+
+        addPoints(1).then((_) {
+          setState(() {
+            userPoints += 1;
           });
-        }
-      });
+        });
+      }
     });
-  }
+  });
 }
 
 
