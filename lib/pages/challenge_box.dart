@@ -23,7 +23,7 @@ class ChallengeBox extends StatelessWidget {
       child: GestureDetector(
         onTap: onTap, // Handle tap if provided
         child: Container(
-          padding: EdgeInsets.all(10),
+          padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
             color: Colors.grey[300],
             borderRadius: BorderRadius.circular(12),
@@ -39,11 +39,11 @@ class ChallengeBox extends StatelessWidget {
                   height: 60, // Fixed height
                   fit: BoxFit.cover, // To maintain aspect ratio without distortion
                   errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.image_not_supported, size: 60); // Placeholder for error
+                    return const Icon(Icons.image_not_supported, size: 60); // Placeholder for error
                   },
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
 
               // Challenge details
               Expanded(
@@ -53,12 +53,12 @@ class ChallengeBox extends StatelessWidget {
                     // Challenge name
                     Text(
                       challengeName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     // Challenge short detail
                     Text(
                       challengeDetail,
@@ -70,20 +70,20 @@ class ChallengeBox extends StatelessWidget {
                   ],
                 ),
               ),
-              SizedBox(width: 12),
+              const SizedBox(width: 12),
 
               // Points display
               Column(
                 children: [
-                  Icon(
+                  const Icon(
                     Icons.star,
                     color: Colors.amber,
                     size: 20,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     "$challengePoints pts",
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
