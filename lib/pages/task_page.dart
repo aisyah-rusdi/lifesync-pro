@@ -23,10 +23,8 @@ class _TaskPage extends State<TaskPage> {
   
   List activityList = [
     ['Exercise', false, 0, 10, 1],
-    ['Read', false, 0, 1800, 1],
+    ['Study', false, 0, 1800, 1],
     ['Meditate', false, 0, 1800, 1],
-    ['Code', false, 0, 1800, 1],
-    ['Work', false, 0, 1800, 1],
   ];
 
   @override
@@ -35,7 +33,7 @@ class _TaskPage extends State<TaskPage> {
     fetchUserPoints();
   }
 
-  Future<void> addPoints(int pointsToAdd) async {
+  Future<void> addPoints(String taskName, int pointsToAdd) async {
   final userDoc = FirebaseFirestore.instance
     .collection('users')
     .doc(FirebaseAuth.instance.currentUser!.uid);
@@ -44,7 +42,12 @@ class _TaskPage extends State<TaskPage> {
   await FirebaseFirestore.instance.runTransaction((transaction) async {
     final snapshot = await transaction.get(userDoc);
     final currentPoints = snapshot['points'] ?? 0; // Default to 0 if field does not exist
-    transaction.update(userDoc, {'points': currentPoints + pointsToAdd});
+    final taskScore = snapshot[taskName] ?? 0;
+
+    transaction.update(userDoc, 
+    {'points': currentPoints + pointsToAdd,
+    taskName: taskScore + pointsToAdd,
+    });
   });
 }
 
@@ -207,7 +210,22 @@ Future<void> fetchUserPoints() async {
 
         // Add points based on multiplier
         int pointsToAdd = activityList[index][4]; // Multiplier determines points
-        addPoints(pointsToAdd).then((_) {
+        String taskField = '';
+        switch(index) {
+          case 0:
+            taskField = 'exerciseScore';
+            break;
+
+          case 1:
+            taskField = 'studyScore';
+            break;
+
+          case 2:
+            taskField = 'meditateScore';
+            break;
+        }
+
+        addPoints(taskField, pointsToAdd).then((_) {
           setState(() {
             userPoints += pointsToAdd;
           });

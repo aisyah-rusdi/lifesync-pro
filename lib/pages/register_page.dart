@@ -23,6 +23,9 @@ class _RegisterPageState extends State<RegisterPage> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
 
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -37,74 +40,80 @@ class _RegisterPageState extends State<RegisterPage> {
   }
 
   Future<void> signUp() async {
-  if (_allFieldsValid() && passwordConfirmed()) {
-    try {
-      // Create user
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // Check if user was created
-      if (userCredential.user != null) {
-        // Add user details to Firebase
-        await addUserDetails(
-          _firstNameController.text.trim(),
-          _lastNameController.text.trim(),
-          _emailController.text.trim(),
-          int.parse(_ageController.text.trim()),
-          double.parse(_weightController.text.trim()),
-          double.parse(_heightController.text.trim()),
+    if (_allFieldsValid() && passwordConfirmed()) {
+      try {
+        // Create user
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
         );
 
-        // Show success message and navigate to login
-        showSuccessDialog("Account successfully created! You can now log in!");
-      } else {
-        showAlertDialog("User registration failed. Please try again.");
+        // Check if user was created
+        if (userCredential.user != null) {
+          // Add user details to Firebase
+          await addUserDetails(
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _emailController.text.trim(),
+            int.parse(_ageController.text.trim()),
+            double.parse(_weightController.text.trim()),
+            double.parse(_heightController.text.trim()),
+          );
+
+          // Show success message and navigate to login
+          showSuccessDialog(
+              "Account successfully created! You can now log in!");
+        } else {
+          showAlertDialog("User registration failed. Please try again.");
+        }
+      } on FirebaseAuthException catch (e) {
+        // Handle different Firebase exceptions
+        switch (e.code) {
+          case 'email-already-in-use':
+            showAlertDialog(
+                "The email address is already in use by another account. Please use another email.");
+            break;
+          case 'weak-password':
+            showAlertDialog(
+                "The password provided is too weak. Please choose a stronger password.");
+            break;
+          case 'invalid-email':
+            showAlertDialog(
+                "The email address is not valid. Please enter a valid email.");
+            break;
+          default:
+            showAlertDialog("An error occurred. Please try again.");
+            break;
+        }
       }
-    } on FirebaseAuthException catch (e) {
-      // Handle different Firebase exceptions
-      switch (e.code) {
-        case 'email-already-in-use':
-          showAlertDialog("The email address is already in use by another account. Please use another email.");
-          break;
-        case 'weak-password':
-          showAlertDialog("The password provided is too weak. Please choose a stronger password.");
-          break;
-        case 'invalid-email':
-          showAlertDialog("The email address is not valid. Please enter a valid email.");
-          break;
-        default:
-          showAlertDialog("An error occurred. Please try again.");
-          break;
-      }
+    } else {
+      showAlertDialog("Passwords do not match. Please try again.");
     }
-  } else {
-    showAlertDialog("Passwords do not match. Please try again.");
   }
-}
 
-
-  Future addUserDetails(
-    String firstName, String lastName, String email, int age, double weight, double height) async {
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(FirebaseAuth.instance.currentUser!.uid) // Use UID as document ID
-      .set({
-        'first name': firstName,
-        'last name': lastName,
-        'email': email,
-        'age': age,
-        'weight': weight,
-        'height': height,
-        'points':0,
-      }
-    );
-}
-
+  Future addUserDetails(String firstName, String lastName, String email,
+      int age, double weight, double height) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid) // Use UID as document ID
+        .set({
+      'first name': firstName,
+      'last name': lastName,
+      'email': email,
+      'age': age,
+      'weight': weight,
+      'height': height,
+      'points': 0,
+      'exerciseScore': 0,
+      'studyScore': 0,
+      'meditateScore': 0,
+    });
+  }
 
   bool passwordConfirmed() {
-    return _passwordController.text.trim() == _confirmpasswordController.text.trim();
+    return _passwordController.text.trim() ==
+        _confirmpasswordController.text.trim();
   }
 
   bool _allFieldsValid() {
@@ -151,7 +160,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   void showSuccessDialog(String message) {
     if (!mounted) return;
-    
+
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -228,7 +237,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 SizedBox(height: 10),
 
                 // Confirm password textfield
-                _buildPasswordField(_confirmpasswordController, "Confirm Password"),
+                _buildConfirmPasswordField(
+                    _confirmpasswordController, "Confirm Password"),
                 SizedBox(height: 10),
 
                 // Sign up button
@@ -311,21 +321,65 @@ class _RegisterPageState extends State<RegisterPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: TextField(
-        obscureText: true,
+        obscureText: !_isPasswordVisible,
         controller: controller,
         decoration: InputDecoration(
-          enabledBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.white),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Colors.deepPurple),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          hintText: hint,
-          fillColor: Colors.grey[200],
-          filled: true,
-        ),
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.deepPurple),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            hintText: hint,
+            fillColor: Colors.grey[200],
+            filled: true,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isPasswordVisible = !_isPasswordVisible;
+                });
+              },
+            )),
+      ),
+    );
+  }
+
+  Widget _buildConfirmPasswordField(
+      TextEditingController controller, String hint) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
+      child: TextField(
+        obscureText: !_isConfirmPasswordVisible,
+        controller: controller,
+        decoration: InputDecoration(
+            enabledBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.white),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Colors.deepPurple),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            hintText: hint,
+            fillColor: Colors.grey[200],
+            filled: true,
+            suffixIcon: IconButton(
+              icon: Icon(
+                _isConfirmPasswordVisible
+                    ? Icons.visibility
+                    : Icons.visibility_off,
+              ),
+              onPressed: () {
+                setState(() {
+                  _isConfirmPasswordVisible = !_isConfirmPasswordVisible;
+                });
+              },
+            )),
       ),
     );
   }
