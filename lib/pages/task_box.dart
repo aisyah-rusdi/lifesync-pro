@@ -1,9 +1,7 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
-
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 
-class ActivityBox extends StatelessWidget{
+class ActivityBox extends StatefulWidget {
   final String activityname;
   final VoidCallback onTap;
   final VoidCallback settingsTapped;
@@ -12,104 +10,102 @@ class ActivityBox extends StatelessWidget{
   final bool started;
 
   const ActivityBox({
-    Key? key, 
+    Key? key,
     required this.activityname,
     required this.onTap,
     required this.settingsTapped,
     required this.timeSpent,
     required this.timeGoal,
-    required this.started}) : super(key:key);
+    required this.started,
+  }) : super(key: key);
 
-    String formatToMinSec(int totalSeconds) {
-      String secs = (totalSeconds % 60).toString();
-      String mins = (totalSeconds / 60).toStringAsFixed(2);
+  @override
+  _ActivityBoxState createState() => _ActivityBoxState();
+}
 
-      if (secs.length == 1) {
-        secs = '0$secs';
-      }
+class _ActivityBoxState extends State<ActivityBox> {
+  int multiplier = 1; // Multiplier for time goal (default: 1x)
 
-      if (mins[1] == '.') {
-        mins = mins.substring(0, 1);
-      }
+  String formatToMinSec(int totalSeconds) {
+    final minutes = (totalSeconds ~/ 60).toString().padLeft(2, '0');
+    final seconds = (totalSeconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
 
-      return '$mins:$secs';
-    }
-
-    double percentCompleted() {
-      return timeSpent / timeGoal;
-    }
+  double percentCompleted() {
+    if (widget.timeGoal == 0) return 0.0; // Prevent division by zero
+    return widget.timeSpent / (widget.timeGoal * multiplier);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-            padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
-            child: Container(
-              padding: EdgeInsets.all(20),     
-              decoration: BoxDecoration(
-                color: Colors.grey[200],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: onTap,
-                        child: SizedBox(
-                          height: 60,
-                          width: 60,
-                          child: Stack(
-                            children: [
-                              CircularPercentIndicator(
-                                radius:30,
-                                percent: percentCompleted() < 1 ? percentCompleted() : 1,
-                                progressColor: percentCompleted() > 0.5
-                                  ? Colors.green
-                                  : Colors.red,
-                              ),
-                        
-                              Center(
-                                child: Icon(started ? Icons.pause : Icons.play_arrow),
-                              ),
-                            ],
-                          ),
+      padding: const EdgeInsets.only(left: 20, right: 20, top: 20),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.grey[200],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                GestureDetector(
+                  onTap: widget.onTap,
+                  child: SizedBox(
+                    height: 60,
+                    width: 60,
+                    child: Stack(
+                      children: [
+                        CircularPercentIndicator(
+                          radius: 30,
+                          lineWidth: 4.0,
+                          percent: percentCompleted().clamp(0.0, 1.0),
+                          progressColor: percentCompleted() >= 0.5 ? Colors.green : Colors.red,
+                          backgroundColor: Colors.grey[300]!,
                         ),
-                      ),
-                      
-                      const SizedBox(width: 20),
-
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            activityname,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                            ),
-                          ),
-                      
-                          const SizedBox(height: 4),
-                      
-                          Text(
-                            '${formatToMinSec(timeSpent)} / ${(timeGoal / 60).toStringAsFixed(2)} = ${(percentCompleted()*100).toStringAsFixed(0)}%',
-                            style: TextStyle(
-                              color: Colors.grey,
-                            ),
-                          )
-                        ],
-                      ),
-                    ],
+                        Center(
+                          child: Icon(widget.started ? Icons.pause : Icons.play_arrow),
+                        ),
+                      ],
+                    ),
                   ),
-                  
-                  /*GestureDetector(
-                    onTap: settingsTapped,
-                    child: Icon(Icons.settings)
-                    ),*/
-                ],
-              ),
+                ),
+                const SizedBox(width: 20),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.activityname,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      '${formatToMinSec(widget.timeSpent)} / ${formatToMinSec(widget.timeGoal * multiplier)} = ${(percentCompleted() * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          );
+            Column(
+              children: [
+                GestureDetector(
+                  onTap: widget.settingsTapped,
+                  child: const Icon(Icons.timer, size: 40,),
+                ),
+              ]  
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

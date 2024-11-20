@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'package:flutter/material.dart';
 
 class ChallengeBox extends StatelessWidget {
@@ -5,7 +7,10 @@ class ChallengeBox extends StatelessWidget {
   final String challengeDetail;
   final int challengePoints;
   final String challengeImagePath;
-  final VoidCallback? onTap; // Function to handle taps, like accepting the challenge
+  final String timeGoal;
+  final String category;
+  final DateTime endDate;
+  final VoidCallback? onTap; // Function to handle taps
 
   const ChallengeBox({
     Key? key,
@@ -13,6 +18,9 @@ class ChallengeBox extends StatelessWidget {
     required this.challengeDetail,
     required this.challengePoints,
     required this.challengeImagePath,
+    required this.timeGoal,
+    required this.category,
+    required this.endDate,
     this.onTap,
   }) : super(key: key);
 
@@ -21,79 +29,146 @@ class ChallengeBox extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0, vertical: 10.0),
       child: GestureDetector(
-        onTap: onTap, // Handle tap if provided
-        child: Container(
-          padding: EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            borderRadius: BorderRadius.circular(12),
+        onTap: onTap, // Handle tap to navigate or show details
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
           ),
-          child: Row(
-            children: [
-              // Challenge image
-               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.asset(
-                  challengeImagePath,
-                  width: 60, // Fixed width
-                  height: 60, // Fixed height
-                  fit: BoxFit.cover, // To maintain aspect ratio without distortion
-                  errorBuilder: (context, error, stackTrace) {
-                    return Icon(Icons.image_not_supported, size: 60); // Placeholder for error
-                  },
+          elevation: 5,
+          child: Container(
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              color: Colors.white,
+            ),
+            child: Row(
+              children: [
+                // Challenge image
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.asset(
+                    challengeImagePath,
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(Icons.image_not_supported, size: 60);
+                    },
+                  ),
                 ),
-              ),
-              SizedBox(width: 12),
+                const SizedBox(width: 8),
 
-              // Challenge details
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Challenge name
-                    Text(
-                      challengeName,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                // Challenge name and category
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Challenge name
+                      Text(
+                        challengeName,
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
+                      const SizedBox(height: 5),
+
+                      // Challenge category
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.category,
+                            color: Colors.orange,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            category,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 7),
+
+                      // Time goal
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.timer,
+                            color: Colors.blueAccent,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            timeGoal,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 7),
+
+                      // End date
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today,
+                            color: Colors.green,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            "Ends: ${endDate.toLocal().toString().split(' ')[0]}",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 10),
+
+                // Points display
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.star,
+                      color: Colors.amber,
+                      size: 24,
                     ),
-                    SizedBox(height: 5),
-                    // Challenge short detail
+                    const SizedBox(height: 4),
                     Text(
-                      challengeDetail,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[700],
+                      "$challengePoints pts",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
                       ),
                     ),
                   ],
                 ),
-              ),
-              SizedBox(width: 12),
-
-              // Points display
-              Column(
-                children: [
-                  Icon(
-                    Icons.star,
-                    color: Colors.amber,
-                    size: 20,
-                  ),
-                  SizedBox(height: 4),
-                  Text(
-                    "$challengePoints pts",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
+
+

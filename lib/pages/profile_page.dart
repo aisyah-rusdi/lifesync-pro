@@ -4,6 +4,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert'; // For Base64 encoding/decoding
+import 'package:image_picker/image_picker.dart'; // For image picking
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -13,13 +15,60 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  Uint8List? _image;
+  Uint8List? _image; // Decode image data
+  String? _encodedImage; // Base64-encoded string
 
   void selectImage() async {
-    /*Uint8List img = await pickImage(ImageSource.gallery);
-    setState(() {
-      _image = img;
-    });*/
+    final ImagePicker picker = ImagePicker();
+    final XFile? pickedImage =
+        await picker.pickImage(source: ImageSource.gallery);
+
+    if (pickedImage != null) {
+      Uint8List imageBytes = await pickedImage.readAsBytes();
+      String encodedImage = base64Encode(imageBytes);
+
+      setState(() {
+        _image = imageBytes; // Display the image
+        _encodedImage = encodedImage;
+      });
+
+      // Save the encoded image to Firestore
+      await saveImageToFirestore(encodedImage);
+    }
+  }
+
+  Future<void> saveImageToFirestore(String encodedImage) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({
+        'profileImage': encodedImage,
+      });
+    } catch (e) {
+      print("Error saving profile image: $e");
+    }
+  }
+
+  Future<void> fetchImageFromFirestore() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (userDoc.exists) {
+        String? encodedImage = userDoc.get('profileImage');
+        if (encodedImage != null) {
+          setState(() {
+            _encodedImage = encodedImage;
+            _image = base64Decode(encodedImage); // Decode and display the image
+          });
+        }
+      }
+    } catch (e) {
+      print("Error fetching profile image: $e");
+    }
   }
 
   final user = FirebaseAuth.instance.currentUser!;
@@ -33,7 +82,12 @@ class _ProfilePageState extends State<ProfilePage> {
   void initState() {
     super.initState();
     fetchUserData();
+    fetchImageFromFirestore(); // Fetch the profile image on initialization
   }
+
+  int exerciseScore = 0;
+  int studyScore = 0;
+  int meditateScore = 0;
 
   Future<void> fetchUserData() async {
     try {
@@ -50,6 +104,11 @@ class _ProfilePageState extends State<ProfilePage> {
             age = userDoc.get('age')?.toString() ?? "Not provided";
             weight = userDoc.get('weight')?.toString() ?? "Not provided";
             height = userDoc.get('height')?.toString() ?? "Not provided";
+
+            // Fetch task scores
+            exerciseScore = userDoc.get('exerciseScore') ?? 0;
+            studyScore = userDoc.get('studyScore') ?? 0;
+            meditateScore = userDoc.get('meditateScore') ?? 0;
           } else {
             name = "No data found";
           }
@@ -92,6 +151,81 @@ class _ProfilePageState extends State<ProfilePage> {
                 String newValue = controller.text;
                 if (newValue.isNotEmpty) {
                   try {
+                    if (field == 'height') {
+                      double heightValue = double.parse(newValue);
+
+                      //Check if height is within the valid range
+                      if (heightValue <= 30 || heightValue > 300) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Invalid Height'),
+                              content:
+                                  Text('Please enter a valid height in cm'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context); // Close the dialog
+                                  },
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        return;
+                      }
+                    } else if (field == 'weight') {
+                      double weightValue = double.parse(newValue);
+
+                      //Check if weight is within the valid range
+                      if (weightValue <= 10 || weightValue > 500) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Invalid weight'),
+                              content:
+                                  Text('Please enter a valid weight in kg'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        return;
+                      }
+                    } else if (field == 'age') {
+                      int ageValue = int.parse(newValue);
+
+                      //Check if age is within the valid range
+                      if (ageValue <= 0 || ageValue > 110) {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Invalid Age'),
+                              content: Text('Please enter a valid age.'),
+                              actions: [
+                                TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+                                  },
+                                  child: Text('OK'),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                        return; // Stop further processing
+                      }
+                    }
                     // Update Firebase with the new value
                     await FirebaseFirestore.instance
                         .collection('users')
@@ -195,11 +329,46 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 20),
+                  Text(
+                    "Personal Info",
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  // Display the profile info
+                  ...[
+                    EditPersonalInfo(label: 'Height', value: '$height cm'),
+                    EditPersonalInfo(label: 'Weight', value: '$weight kg'),
+                    EditPersonalInfo(label: 'Age', value: '$age years'),
+                  ].map((edit) {
+                    return Card(
+                      elevation: 3,
+                      shadowColor: Colors.black12,
+                      child: ListTile(
+                        trailing: Icon(Icons.edit),
+                        title: Text('${edit.label}: ${edit.value}'),
+                        onTap: () {
+                          if (edit.label == 'Height') {
+                            editInfo('height',
+                                height); // Call the function when height is tapped
+                          } else if (edit.label == 'Weight') {
+                            editInfo('weight',
+                                weight); // Call the function when height is tapped
+                          } else if (edit.label == 'Age') {
+                            editInfo('age',
+                                age); // Call the function when height is tapped
+                          }
+                        },
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 20),
                   Row(
                     //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: const [
                       Padding(
-                        padding: EdgeInsets.only(right: 4),
+                        padding: EdgeInsets.only(right: 3),
                         child: Text(
                           "Progress Task",
                           style: TextStyle(
@@ -211,11 +380,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 10),
                   Row(
-                    children: List.generate(4, (index) {
+                    children: List.generate(3, (index) {
                       return Expanded(
                         child: Container(
                           height: 7,
-                          margin: EdgeInsets.only(right: index == 4 ? 0 : 6),
+                          margin: EdgeInsets.only(right: index == 3 ? 0 : 5),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(10),
                             color: index == 0
@@ -234,6 +403,11 @@ class _ProfilePageState extends State<ProfilePage> {
                         scrollDirection: Axis.horizontal,
                         itemBuilder: (contect, index) {
                           final card = profileTaskProgressCards[index];
+                          final scores = [
+                            exerciseScore,
+                            studyScore,
+                            meditateScore
+                          ];
                           return SizedBox(
                               width: 180,
                               child: Container(
@@ -262,7 +436,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                         ),
                                         SizedBox(height: 5),
                                         Text(
-                                          "0",
+                                          "${scores[index]}",
                                           textAlign: TextAlign.center,
                                           style: TextStyle(
                                             fontSize: 20,
@@ -275,60 +449,9 @@ class _ProfilePageState extends State<ProfilePage> {
                               ));
                         },
                         separatorBuilder: (context, index) =>
-                            const Padding(padding: EdgeInsets.only(right: 4)),
+                            const Padding(padding: EdgeInsets.only(right: 3)),
                         itemCount: profileTaskProgressCards.length),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    "Personal Info",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  // Display the profile info
-                  ...[
-                    EditPersonalInfo(label: 'Height', value: '$height cm'),
-                    EditPersonalInfo(label: 'Weight', value: '$weight kg'),
-                    EditPersonalInfo(label: 'Age', value: '$age years'),
-                  ].map((edit) {
-                    return Card(
-                      elevation: 4,
-                      shadowColor: Colors.black12,
-                      child: ListTile(
-                        trailing: Icon(Icons.edit),
-                        title: Text('${edit.label}: ${edit.value}'),
-                        onTap: () {
-                          if (edit.label == 'Height') {
-                            editInfo('height',
-                                height); // Call the function when height is tapped
-                          } else if (edit.label == 'Weight') {
-                            editInfo('weight',
-                                weight); // Call the function when height is tapped
-                          } else if (edit.label == 'Age') {
-                            editInfo('age',
-                                age); // Call the function when height is tapped
-                          }
-                        },
-                      ),
-                    );
-                  }),
-
-                  /*ProfileSection(
-                    title: "Info",
-                    items: const [
-                      "Personal Info",
-                      "Record",
-                      "Data",
-                      "Health Statistic"
-                    ],
-                  ),
-                  ProfileSection(
-                      title: "Notification",
-                      items: const ["Show notifications"]),
-                  ProfileSection(
-                      title: "Additional",
-                      items: const ["Contact us", "Verified"]),*/
                 ],
               ),
             ),
@@ -353,17 +476,17 @@ List<ProfileTaskProgressCard> profileTaskProgressCards = [
     icon: CupertinoIcons.sportscourt,
   ),
   ProfileTaskProgressCard(
-    title: "Read",
+    title: "Study",
     icon: CupertinoIcons.book,
   ),
   ProfileTaskProgressCard(
     title: "Meditate",
     icon: CupertinoIcons.home,
   ),
-  ProfileTaskProgressCard(
+  /*ProfileTaskProgressCard(
     title: "Code",
     icon: CupertinoIcons.device_laptop,
-  ),
+  ),*/
 ];
 
 class EditPersonalInfo {

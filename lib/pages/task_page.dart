@@ -16,14 +16,15 @@ class _TaskPage extends State<TaskPage> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _focusSound = AudioPlayer();
 
+  bool isMusicPlaying = true;
+  bool isActivityRunning = false;
+
   int userPoints = 0;
   
   List activityList = [
-    ['Exercise', false, 0, 60],
-    ['Read', false, 0, 1800],
-    ['Meditate', false, 0, 1800],
-    ['Code', false, 0, 1800],
-    ['Work', false, 0, 1800],
+    ['Exercise', false, 0, 10, 1],
+    ['Study', false, 0, 1800, 1],
+    ['Meditate', false, 0, 1800, 1],
   ];
 
   @override
@@ -32,7 +33,7 @@ class _TaskPage extends State<TaskPage> {
     fetchUserPoints();
   }
 
-  Future<void> addPoints(int pointsToAdd) async {
+  Future<void> addPoints(String taskName, int pointsToAdd) async {
   final userDoc = FirebaseFirestore.instance
     .collection('users')
     .doc(FirebaseAuth.instance.currentUser!.uid);
@@ -41,7 +42,12 @@ class _TaskPage extends State<TaskPage> {
   await FirebaseFirestore.instance.runTransaction((transaction) async {
     final snapshot = await transaction.get(userDoc);
     final currentPoints = snapshot['points'] ?? 0; // Default to 0 if field does not exist
-    transaction.update(userDoc, {'points': currentPoints + pointsToAdd});
+    final taskScore = snapshot[taskName] ?? 0;
+
+    transaction.update(userDoc, 
+    {'points': currentPoints + pointsToAdd,
+    taskName: taskScore + pointsToAdd,
+    });
   });
 }
 
@@ -61,11 +67,51 @@ Future<void> fetchUserPoints() async {
     }
   }
 
+  void chooseMultiplier(int index) {
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: const Text('Choose Multiplier'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (int i = 1; i <= 4; i++)
+              ListTile(
+                title: Text('${i}x Time Goal'),
+                onTap: () {
+                  setState(() {
+                    activityList[index][4] = i; // Update multiplier
+                  });
+                  print('Multiplier updated to: ${activityList[index][4]}'); // Debugging
+                  Navigator.of(context).pop();
+                },
+              ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+
+
+  void toggleMusic() {
+    setState(() {
+      isMusicPlaying = !isMusicPlaying;
+      if (isMusicPlaying && isActivityRunning) {
+        _focusSound.setReleaseMode(ReleaseMode.loop);
+        _focusSound.play(AssetSource('audio/focus.mp3'));
+      } else {
+        _focusSound.stop();
+      }
+    });
+  }
+
   void activityStarted(int index) {
-  // Check if another activity is already active
   if (activityList.any((activity) => activity[1] && activity != activityList[index])) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Please pause the current activity before starting another.')),
+      const SnackBar(content: Text('Please pause the current activity before starting another.')),
     );
     return;
   }
@@ -100,16 +146,18 @@ Future<void> fetchUserPoints() async {
     return;
   }
 
-  // Start the selected activity
-  _focusSound.setReleaseMode(ReleaseMode.loop);
-  _focusSound.play(AssetSource('audio/focus.mp3'));
+  setState(() {
+    activityList[index][1] = true;
+    isActivityRunning = true;
+  });
+
+  if (isMusicPlaying) {
+    _focusSound.setReleaseMode(ReleaseMode.loop);
+    _focusSound.play(AssetSource('audio/focus.mp3'));
+  }
 
   var startTime = DateTime.now();
   int elapsedTime = activityList[index][2];
-
-  setState(() {
-    activityList[index][1] = true;
-  });
 
   Timer.periodic(const Duration(seconds: 1), (timer) {
     if (!mounted) return;
@@ -127,12 +175,16 @@ Future<void> fetchUserPoints() async {
           60 * 60 * (currentTime.hour - startTime.hour);
 
       // Check if the task time goal is reached
-      if (activityList[index][2] > activityList[index][3]) {
+      int currentTimeGoal = activityList[index][3] * activityList[index][4]; // Multiply by the current multiplier
+
+      
+      if (activityList[index][2] > currentTimeGoal) {
         timer.cancel();
         activityList[index][1] = false;
         activityList[index][2] = 0;
+        isActivityRunning = false;
 
-        _focusSound.stop();  // Stop looping sound when time goal is reached
+        _focusSound.stop(); // Stop looping sound when time goal is reached
 
         // Play alarm sound
         _audioPlayer.play(AssetSource('audio/alarm.mp3'));
@@ -156,16 +208,32 @@ Future<void> fetchUserPoints() async {
           ),
         );
 
-        addPoints(1).then((_) {
+        // Add points based on multiplier
+        int pointsToAdd = activityList[index][4]; // Multiplier determines points
+        String taskField = '';
+        switch(index) {
+          case 0:
+            taskField = 'exerciseScore';
+            break;
+
+          case 1:
+            taskField = 'studyScore';
+            break;
+
+          case 2:
+            taskField = 'meditateScore';
+            break;
+        }
+
+        addPoints(taskField, pointsToAdd).then((_) {
           setState(() {
-            userPoints += 1;
+            userPoints += pointsToAdd;
           });
         });
       }
     });
   });
 }
-
 
 
   void settingsOpened(int index) {}
@@ -177,34 +245,40 @@ Future<void> fetchUserPoints() async {
         title: Row(
           children: [
             const Text("Task"),
-            
-            const SizedBox(width: 170,),
-            const Icon(Icons.star,
-              color: Colors.amber,
+            const SizedBox(width: 130),
+            const Icon(Icons.star, color: Colors.amber),
+            const SizedBox(width: 8),
+            Text(
+              userPoints.toString(), // Show user points
+              style: const TextStyle(
+                color: Colors.black,
+                fontWeight: FontWeight.bold,
               ),
-
-            const SizedBox(width: 8,),
-            Text(userPoints.toString(), // Show user points
-                style: const TextStyle(
-                    color: Colors.black, 
-                    fontWeight: FontWeight.bold
-                    )
-                  ),
+            ),
           ],
-
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context); // This will take you back to the previous page
+            _focusSound.stop();
           },
         ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 20.0),
+            child: GestureDetector(
+              onTap: toggleMusic,
+              child: Icon(
+                isMusicPlaying ? Icons.music_note : Icons.music_off,
+              ),
+            ),
+          ),
+        ],
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        
       ),
-
       body: ListView.builder(
         itemCount: activityList.length,
         itemBuilder: (context, index) {
@@ -214,11 +288,11 @@ Future<void> fetchUserPoints() async {
               activityStarted(index);
             },
             settingsTapped: () {
-              settingsOpened(index);
+              chooseMultiplier(index);
             },
-            started: activityList[index][1],
             timeSpent: activityList[index][2],
-            timeGoal: activityList[index][3],
+            timeGoal: activityList[index][3] * activityList[index][4],
+            started: activityList[index][1],
           );
         },
       ),

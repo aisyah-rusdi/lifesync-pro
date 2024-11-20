@@ -3,7 +3,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/challenge_page.dart';
+import 'package:flutter_firebase_project/pages/challenge_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
 //import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
@@ -30,8 +31,9 @@ class HomePage extends StatefulWidget{
 
     List<Widget>get _pages => [
       dashboard(),
-      challenge(),
+      ChallengePage(),
       ToDoListPage(),
+      LeaderboardPage(),
       StorePage(),
     ];
 
@@ -102,7 +104,7 @@ class HomePage extends StatefulWidget{
             BottomNavigationBarItem(icon: Icon(Icons.home), label:'Home'),
             BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
             BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
-            //BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
+            BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
             BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label:'Store'),
           ],
         ),
