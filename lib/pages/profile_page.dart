@@ -72,6 +72,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   final user = FirebaseAuth.instance.currentUser!;
+  String firstName = "";
+  String lastName = "";
   String name = "";
   String age = "";
   String weight = "";
@@ -99,8 +101,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         setState(() {
           if (userDoc.exists) {
-            name =
-                "${userDoc.get('first name') ?? 'Unknown'} ${userDoc.get('last name') ?? ''}";
+            firstName = userDoc.get('first name') ?? " ";
+            lastName = userDoc.get('last name') ?? " ";
+            name = "$firstName $lastName";
+
             age = userDoc.get('age')?.toString() ?? "Not provided";
             weight = userDoc.get('weight')?.toString() ?? "Not provided";
             height = userDoc.get('height')?.toString() ?? "Not provided";
@@ -123,6 +127,85 @@ class _ProfilePageState extends State<ProfilePage> {
         });
       }
     }
+  }
+
+  Future<void> editName() async {
+    // Initialize the controllers with the current values (old values)
+    TextEditingController firstNameController =
+        TextEditingController(text: firstName);
+    TextEditingController lastNameController =
+        TextEditingController(text: lastName);
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Edit Name'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // TextField for first name with current value as the default text
+              TextField(
+                controller: firstNameController,
+                keyboardType: TextInputType.text,
+                decoration:
+                    const InputDecoration(hintText: "Enter new First Name"),
+              ),
+              const SizedBox(height: 10),
+              // TextField for last name with current value as the default text
+              TextField(
+                controller: lastNameController,
+                keyboardType: TextInputType.text,
+                decoration:
+                    const InputDecoration(hintText: "Enter new Last Name"),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                    context); // Close the dialog if 'Cancel' is clicked
+              },
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () async {
+                String newFirstName = firstNameController.text.trim();
+                String newLastName = lastNameController.text.trim();
+
+                // Ensure both fields are not empty
+                if (newFirstName.isNotEmpty && newLastName.isNotEmpty) {
+                  try {
+                    // Update Firebase with the new first and last names
+                    await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user.uid)
+                        .update({
+                      'first name': newFirstName,
+                      'last name': newLastName,
+                    });
+
+                    // Update the UI with the new values
+                    setState(() {
+                      firstName = newFirstName;
+                      lastName = newLastName;
+                      name =
+                          "$newFirstName $newLastName"; // Combine for full name
+                    });
+
+                    Navigator.pop(context); // Close the dialog after saving
+                  } catch (e) {
+                    print('Error updating name: $e');
+                  }
+                }
+              },
+              child: const Text('Save'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   Future<void> editInfo(String field, String currentValue) async {
@@ -151,81 +234,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 String newValue = controller.text;
                 if (newValue.isNotEmpty) {
                   try {
-                    if (field == 'height') {
-                      double heightValue = double.parse(newValue);
-
-                      //Check if height is within the valid range
-                      if (heightValue <= 30 || heightValue > 300) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Invalid Height'),
-                              content:
-                                  Text('Please enter a valid height in cm'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context); // Close the dialog
-                                  },
-                                  child: Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        return;
-                      }
-                    } else if (field == 'weight') {
-                      double weightValue = double.parse(newValue);
-
-                      //Check if weight is within the valid range
-                      if (weightValue <= 10 || weightValue > 500) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Invalid weight'),
-                              content:
-                                  Text('Please enter a valid weight in kg'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        return;
-                      }
-                    } else if (field == 'age') {
-                      int ageValue = int.parse(newValue);
-
-                      //Check if age is within the valid range
-                      if (ageValue <= 0 || ageValue > 110) {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return AlertDialog(
-                              title: Text('Invalid Age'),
-                              content: Text('Please enter a valid age.'),
-                              actions: [
-                                TextButton(
-                                  onPressed: () {
-                                    Navigator.pop(context);
-                                  },
-                                  child: Text('OK'),
-                                ),
-                              ],
-                            );
-                          },
-                        );
-                        return; // Stop further processing
-                      }
-                    }
                     // Update Firebase with the new value
                     await FirebaseFirestore.instance
                         .collection('users')
@@ -320,10 +328,20 @@ class _ProfilePageState extends State<ProfilePage> {
                             )
                           ],
                         ),
-                        Text(
-                          name,
-                          style: const TextStyle(
-                              fontSize: 24, fontWeight: FontWeight.bold),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              name,
+                              style: const TextStyle(
+                                  fontSize: 24, fontWeight: FontWeight.bold),
+                            ),
+                            IconButton(
+                              onPressed: () => editName(),
+                              icon: const Icon(Icons.edit),
+                              tooltip: 'Edit Name',
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -346,20 +364,22 @@ class _ProfilePageState extends State<ProfilePage> {
                       elevation: 3,
                       shadowColor: Colors.black12,
                       child: ListTile(
-                        trailing: Icon(Icons.edit),
                         title: Text('${edit.label}: ${edit.value}'),
-                        onTap: () {
-                          if (edit.label == 'Height') {
-                            editInfo('height',
-                                height); // Call the function when height is tapped
-                          } else if (edit.label == 'Weight') {
-                            editInfo('weight',
-                                weight); // Call the function when height is tapped
-                          } else if (edit.label == 'Age') {
-                            editInfo('age',
-                                age); // Call the function when height is tapped
-                          }
-                        },
+                        trailing: IconButton(
+                          icon: Icon(Icons.edit),
+                          onPressed: () {
+                            if (edit.label == 'Height') {
+                              editInfo('height',
+                                  height); // Call the function when height is tapped
+                            } else if (edit.label == 'Weight') {
+                              editInfo('weight',
+                                  weight); // Call the function when height is tapped
+                            } else if (edit.label == 'Age') {
+                              editInfo('age',
+                                  age); // Call the function when height is tapped
+                            }
+                          },
+                        ),
                       ),
                     );
                   }),
