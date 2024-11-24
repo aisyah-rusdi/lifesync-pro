@@ -20,6 +20,8 @@ class _RegisterPageState extends State<RegisterPage> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
   final _ageController = TextEditingController();
+  final _weightController = TextEditingController();
+  final _heightController = TextEditingController();
 
   @override
   void dispose() {
@@ -29,43 +31,62 @@ class _RegisterPageState extends State<RegisterPage> {
     _firstNameController.dispose();
     _lastNameController.dispose();
     _ageController.dispose();
+    _weightController.dispose();
+    _heightController.dispose();
     super.dispose();
   }
 
   Future<void> signUp() async {
-    if (_allFieldsValid() && passwordConfirmed()) {
-      try {
-        // Create user
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailController.text.trim(),
-          password: _passwordController.text.trim(),
-        );
+  if (_allFieldsValid() && passwordConfirmed()) {
+    try {
+      // Create user
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
 
-        // Add user details to Firebase if successful
+      // Check if user was created
+      if (userCredential.user != null) {
+        // Add user details to Firebase
         await addUserDetails(
           _firstNameController.text.trim(),
           _lastNameController.text.trim(),
           _emailController.text.trim(),
           int.parse(_ageController.text.trim()),
+          double.parse(_weightController.text.trim()),
+          double.parse(_heightController.text.trim()),
         );
 
         // Show success message and navigate to login
         showSuccessDialog("Account successfully created! You can now log in!");
-      } on FirebaseAuthException catch (e) {
-        if (e.code == 'email-already-in-use') {
-          showAlertDialog(
-              "The email address is already in use by another account. Please use another email.");
-        } else {
-          showAlertDialog("An error occurred. Please try again.");
-        }
+      } else {
+        showAlertDialog("User registration failed. Please try again.");
       }
-    } else {
-      showAlertDialog("Passwords do not match. Please try again.");
+    } on FirebaseAuthException catch (e) {
+      // Handle different Firebase exceptions
+      switch (e.code) {
+        case 'email-already-in-use':
+          showAlertDialog("The email address is already in use by another account. Please use another email.");
+          break;
+        case 'weak-password':
+          showAlertDialog("The password provided is too weak. Please choose a stronger password.");
+          break;
+        case 'invalid-email':
+          showAlertDialog("The email address is not valid. Please enter a valid email.");
+          break;
+        default:
+          showAlertDialog("An error occurred. Please try again.");
+          break;
+      }
     }
+  } else {
+    showAlertDialog("Passwords do not match. Please try again.");
   }
+}
+
 
   Future addUserDetails(
-    String firstName, String lastName, String email, int age) async {
+    String firstName, String lastName, String email, int age, double weight, double height) async {
   await FirebaseFirestore.instance
       .collection('users')
       .doc(FirebaseAuth.instance.currentUser!.uid) // Use UID as document ID
@@ -74,7 +95,11 @@ class _RegisterPageState extends State<RegisterPage> {
         'last name': lastName,
         'email': email,
         'age': age,
-      });
+        'weight': weight,
+        'height': height,
+        'points':0,
+      }
+    );
 }
 
 
@@ -88,7 +113,9 @@ class _RegisterPageState extends State<RegisterPage> {
         _emailController.text.isEmpty ||
         _passwordController.text.isEmpty ||
         _confirmpasswordController.text.isEmpty ||
-        _ageController.text.isEmpty) {
+        _ageController.text.isEmpty ||
+        _weightController.text.isEmpty ||
+        _heightController.text.isEmpty) {
       showAlertDialog("Please fill in all the fields.");
       return false;
     }
@@ -134,6 +161,13 @@ class _RegisterPageState extends State<RegisterPage> {
             actions: [
               TextButton(
                 onPressed: () {
+                  /*Navigator.of(context).pop();
+                  Navigator.push(
+                    context, 
+                    MaterialPageRoute(
+                      builder: (context) => QuestionPage(),
+                      ),
+                    );*/
                   Navigator.of(context).pop();
                   widget.showLoginPage(); // Uncommented to navigate to login
                 },
@@ -175,6 +209,14 @@ class _RegisterPageState extends State<RegisterPage> {
 
                 // Age textfield
                 _buildTextField(_ageController, "Age"),
+                SizedBox(height: 10),
+
+                // Weight textfield
+                _buildTextField(_weightController, "Weight in kg"),
+                SizedBox(height: 10),
+
+                // Height textfield
+                _buildTextField(_heightController, "Height in cm"),
                 SizedBox(height: 10),
 
                 // Email textfield
