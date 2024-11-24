@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase_project/pages/challenge_box.dart';
-import 'package:flutter_firebase_project/pages/challenge_detail_page.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/challenge_box.dart';
+import 'package:flutter_firebase_project/pages/developing%20feature/challenge_detail_page.dart';
 
 class ChallengePage extends StatefulWidget {
   const ChallengePage({Key? key}) : super(key: key);

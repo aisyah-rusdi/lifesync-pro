@@ -49,7 +49,7 @@ class _LoginPageState extends State<LoginPage> {
     }
 
     else {
-      displayMessage('Incorrect password provided for that user.');
+      displayMessage('Login failed');
     }
   }
 }

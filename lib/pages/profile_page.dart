@@ -4,6 +4,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'package:image_picker/image_picker.dart'; // For image picking
 
@@ -148,6 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
               TextField(
                 controller: firstNameController,
                 keyboardType: TextInputType.text,
+                inputFormatters: [LengthLimitingTextInputFormatter(10)],
                 decoration:
                     const InputDecoration(hintText: "Enter new First Name"),
               ),
@@ -156,6 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
               TextField(
                 controller: lastNameController,
                 keyboardType: TextInputType.text,
+                inputFormatters: [LengthLimitingTextInputFormatter(20)],
                 decoration:
                     const InputDecoration(hintText: "Enter new Last Name"),
               ),

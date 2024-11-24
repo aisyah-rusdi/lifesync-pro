@@ -33,6 +33,8 @@ class _DashboardState extends State<dashboard> {
           .doc(_currentUser!.uid)
           .collection('todos')
           .get();
+
+      if(mounted) {    
       setState(() {
         _toDoList = snapshot.docs
             .map((doc) => {
@@ -42,6 +44,7 @@ class _DashboardState extends State<dashboard> {
                 })
             .toList();
       });
+      }
     }
   }
 

@@ -4,10 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-import 'package:flutter_firebase_project/pages/challenge_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
+//import 'package:flutter_firebase_project/pages/challenge_page.dart';
+import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
-//import 'package:flutter_firebase_project/pages/developing%20feature/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
 import 'package:flutter_firebase_project/pages/developing%20feature/store_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
@@ -37,53 +36,40 @@ class HomePage extends StatefulWidget{
 
     List<Widget>get _pages => [
       dashboard(),
-      ChallengePage(),
+      //ChallengePage(),
       ToDoListPage(),
       LeaderboardPage(),
       StorePage(),
     ];
 
-    @override
-    void initState() {
-      super.initState();
-      _fetchUserName(); // Fetch the user's name on initialization
-      _fetchImageFromFirestore(); // Fetch the user's profile image
-    }
-
-    Future<void> _fetchUserName() async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
+    void _listenToUserData() {
+  FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .snapshots()
+      .listen((snapshot) {
+    if (snapshot.exists) {
       setState(() {
-        userName = 'Hi, ' + userDoc['first name'] + ' ^^';
-      });
-    } catch (e) {
-      print("Error fetching user data: $e");
-    }
-  }
+        // Fetch and update user name
+        userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
 
-  Future<void> _fetchImageFromFirestore() async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-
-      if (userDoc.exists) {
-        String? encodedImage = userDoc.get('profileImage');
+        // Fetch and decode profile image
+        String? encodedImage = snapshot.get('profileImage');
         if (encodedImage != null) {
-          setState(() {
-            _encodedImage = encodedImage;
-            _image = base64Decode(encodedImage); // Decode and display the image
-          });
+          _encodedImage = encodedImage;
+          _image = base64Decode(encodedImage); // Decode and update the image
         }
-      }
-    } catch (e) {
-      print("Error fetching profile image: $e");
+      });
     }
-  }
+  });
+}
+
+@override
+void initState() {
+  super.initState();
+  _listenToUserData(); // Set up the listener
+}
+
 
     @override
     Widget build(BuildContext context) {
@@ -109,7 +95,7 @@ class HomePage extends StatefulWidget{
                             backgroundImage: MemoryImage(_image!),
                             radius: 25,
                           ) // Display the profile image
-                        : Icon(Icons.account_circle, size: 50)), // Profile icon
+                        : Icon(Icons.account_circle, size: 35)), // Profile icon
                 SizedBox(width: 8), // Spacing between icon and text
                 Text(
                   userName ?? 'Welcome',
@@ -177,7 +163,7 @@ class HomePage extends StatefulWidget{
           type: BottomNavigationBarType.fixed,
           items:[
             BottomNavigationBarItem(icon: Icon(Icons.home), label:'Home'),
-            BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
+            //BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
             BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
             BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
             BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label:'Store'),
