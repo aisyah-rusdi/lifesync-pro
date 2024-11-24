@@ -89,23 +89,17 @@ class _StorePageState extends State<StorePage> {
               padding: EdgeInsets.all(8.0),
               childAspectRatio: 0.8,
               children: [
-                _buildStoreItem('Cool Sunglasses', 100,
-                    'https://example.com/sunglasses.png'),
                 _buildStoreItem(
-                    'Trendy Hat', 150, 'https://example.com/hat.png'),
+                    'Cool Sunglasses', 10, 'assets/images/sunglasses.png'),
+                _buildStoreItem('Trendy Hat', 15, 'assets/images/hat.jpg'),
+                _buildStoreItem('Inhaler', 5, 'assets/images/inhaler.jpg'),
+                _buildStoreItem('Energy Drink', 18, 'assets/images/drink.png'),
+                _buildStoreItem('Mouse', 100, 'assets/images/mouse.jpg'),
                 _buildStoreItem(
-                    'Inhaler', 100, 'https://example.com/sunglasses.png'),
-                _buildStoreItem(
-                    'Energy Drink', 150, 'https://example.com/hat.png'),
-                _buildStoreItem(
-                    'Mouse', 100, 'https://example.com/sunglasses.png'),
-                _buildStoreItem(
-                    'Dumbell(10kg)', 150, 'https://example.com/hat.png'),
-                _buildStoreItem(
-                    'Towel', 100, 'https://example.com/sunglasses.png'),
-                _buildStoreItem(
-                    'Hand Grip', 150, 'https://example.com/hat.png'),
-                _buildStoreItem('Shaver', 100, 'assets/images/shaver.jpg'),
+                    'Dumbell(10kg)', 150, 'assets/images/dumbell.jpg'),
+                _buildStoreItem('Towel', 20, 'assets/images/towel.jpg'),
+                _buildStoreItem('Hand Grip', 15, 'assets/images/handgrip.jpg'),
+                _buildStoreItem('Shaver', 10, 'assets/images/shaver.jpg'),
                 _buildStoreItem('Track suit', 150, 'assets/images/track.jpg'),
               ],
             ),
