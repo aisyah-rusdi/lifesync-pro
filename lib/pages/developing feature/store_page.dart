@@ -99,15 +99,15 @@ class _StorePageState extends State<StorePage> {
                 _buildStoreItem('Inhaler', 5, 'assets/images/inhaler.jpg', 300),
                 _buildStoreItem(
                     'Energy Drink', 18, 'assets/images/drink.png', 1000),
-                _buildStoreItem('Mouse', 100, 'assets/images/mouse.jpg', 2500),
+                _buildStoreItem('Mouse', 100, 'assets/images/mouse.png', 2500),
                 _buildStoreItem(
                     'Dumbell(10kg)', 150, 'assets/images/dumbell.png', 3000),
-                _buildStoreItem('Towel', 20, 'assets/images/towel.jpg', 600),
+                _buildStoreItem('Towel', 20, 'assets/images/towel.png', 600),
                 _buildStoreItem(
                     'Hand Grip', 15, 'assets/images/handgrip.png', 700),
                 _buildStoreItem('Shaver', 10, 'assets/images/shaver.png', 500),
                 _buildStoreItem(
-                    'Track suit', 150, 'assets/images/track.jpg', 3500),
+                    'Track suit', 150, 'assets/images/track.png', 3500),
               ],
             ),
           ),
