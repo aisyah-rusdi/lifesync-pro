@@ -8,7 +8,7 @@ import 'package:flutter_firebase_project/pages/dashboard_page.dart';
 import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/store_page.dart';
+import 'package:flutter_firebase_project/pages/store_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'dart:typed_data';
 

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firebase_project/pages/component/chart.dart';
 import 'package:flutter_firebase_project/pages/task_page.dart';
+import 'package:flutter/cupertino.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -53,7 +54,7 @@ class _DashboardState extends State<Dashboard> {
             'Meditate': userDoc.get('meditateScore') ?? 0,
           };
 
-          return Padding(
+          return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -110,7 +111,8 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 const SizedBox(height: 10),
                 // Line Chart Section
-                Expanded(
+                SizedBox(
+                  height: 300,
                   child: TaskProgressChart(taskScores: taskScores),
                 ),
               ],
@@ -131,7 +133,16 @@ class ProfileTaskProgressCard {
 }
 
 const profileTaskProgressCards = [
-  ProfileTaskProgressCard(title: "Exercise", icon: Icons.sports),
-  ProfileTaskProgressCard(title: "Study", icon: Icons.book),
-  ProfileTaskProgressCard(title: "Meditate", icon: Icons.self_improvement),
+  ProfileTaskProgressCard(
+    title: "Exercise",
+    icon: CupertinoIcons.sportscourt,
+  ),
+  ProfileTaskProgressCard(
+    title: "Study",
+    icon: CupertinoIcons.book,
+  ),
+  ProfileTaskProgressCard(
+    title: "Meditate",
+    icon: CupertinoIcons.home,
+  ),
 ];

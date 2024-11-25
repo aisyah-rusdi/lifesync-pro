@@ -369,99 +369,12 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     );
-                  }),
-                  const SizedBox(height: 20),
-                  Row(
-                    //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.only(right: 3),
-                        child: Text(
-                          "Progress Task",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: List.generate(3, (index) {
-                      return Expanded(
-                        child: Container(
-                          height: 7,
-                          margin: EdgeInsets.only(right: index == 3 ? 0 : 5),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                            color: index == 0
-                                ? const Color.fromARGB(255, 235, 130, 251)
-                                : Colors.black12,
-                          ),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    height: 150,
-                    child: ListView.separated(
-                        physics: const BouncingScrollPhysics(),
-                        scrollDirection: Axis.horizontal,
-                        itemBuilder: (contect, index) {
-                          final card = profileTaskProgressCards[index];
-                          final scores = [
-                            exerciseScore,
-                            studyScore,
-                            meditateScore
-                          ];
-                          return SizedBox(
-                              width: 180,
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(
-                                      color: const Color.fromARGB(255, 235, 130,
-                                          251)), // color border for the boxes
-                                  borderRadius: BorderRadius.circular(
-                                      10), // Optional rounded corners
-                                ),
-                                child: Card(
-                                  shadowColor: Colors.black12,
-                                  child: Padding(
-                                    padding: EdgeInsets.all((15)),
-                                    child: Column(
-                                      children: [
-                                        SizedBox(height: 5),
-                                        Icon(
-                                          card.icon,
-                                          size: 40,
-                                        ),
-                                        SizedBox(height: 5),
-                                        Text(
-                                          card.title,
-                                          textAlign: TextAlign.center,
-                                        ),
-                                        SizedBox(height: 5),
-                                        Text(
-                                          "${scores[index]}",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                          ),
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ));
-                        },
-                        separatorBuilder: (context, index) =>
-                            const Padding(padding: EdgeInsets.only(right: 3)),
-                        itemCount: profileTaskProgressCards.length),
+                  }
                   ),
                 ],
-              ),
-            ),
+        
+            )
+        ),   
     );
   }
 }
@@ -476,25 +389,6 @@ class ProfileTaskProgressCard {
     required this.icon,
   });
 }
-
-List<ProfileTaskProgressCard> profileTaskProgressCards = [
-  ProfileTaskProgressCard(
-    title: "Exercise",
-    icon: CupertinoIcons.sportscourt,
-  ),
-  ProfileTaskProgressCard(
-    title: "Study",
-    icon: CupertinoIcons.book,
-  ),
-  ProfileTaskProgressCard(
-    title: "Meditate",
-    icon: CupertinoIcons.home,
-  ),
-  /*ProfileTaskProgressCard(
-    title: "Code",
-    icon: CupertinoIcons.device_laptop,
-  ),*/
-];
 
 class EditPersonalInfo {
   final String label;
