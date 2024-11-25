@@ -104,8 +104,8 @@ class _StorePageState extends State<StorePage> {
                     'Dumbell(10kg)', 150, 'assets/images/dumbell.png', 3000),
                 _buildStoreItem('Towel', 20, 'assets/images/towel.jpg', 600),
                 _buildStoreItem(
-                    'Hand Grip', 15, 'assets/images/handgrip.jpg', 700),
-                _buildStoreItem('Shaver', 10, 'assets/images/shaver.jpg', 500),
+                    'Hand Grip', 15, 'assets/images/handgrip.png', 700),
+                _buildStoreItem('Shaver', 10, 'assets/images/shaver.png', 500),
                 _buildStoreItem(
                     'Track suit', 150, 'assets/images/track.jpg', 3500),
               ],
