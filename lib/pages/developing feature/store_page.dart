@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'checkout.dart'; // Import the CheckoutPage
 
 class StorePage extends StatefulWidget {
   const StorePage({Key? key}) : super(key: key);
@@ -12,7 +13,9 @@ class StorePage extends StatefulWidget {
 class _StorePageState extends State<StorePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
   int userPoints = 0;
+  List<Map<String, dynamic>> cartItems = []; // To store cart items
 
   @override
   void initState() {
@@ -35,33 +38,17 @@ class _StorePageState extends State<StorePage> {
     }
   }
 
-  Future<void> _redeemItem(int cost, String itemName) async {
-    final userId = _auth.currentUser?.uid;
-    if (userId != null && userPoints >= cost) {
-      final userDoc = _firestore.collection('users').doc(userId);
-      await _firestore.runTransaction((transaction) async {
-        final snapshot = await transaction.get(userDoc);
-        final currentPoints = snapshot['points'] ?? 0;
-
-        if (currentPoints >= cost) {
-          transaction.update(userDoc, {'points': currentPoints - cost});
-          setState(() {
-            userPoints -= cost;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$itemName added to cart!')),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Not enough points')),
-          );
-        }
+  void _addToCart(String itemName, int cost, int priceInCents) {
+    setState(() {
+      cartItems.add({
+        'itemName': itemName,
+        'cost': cost,
+        'priceInCents': priceInCents,
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Not enough points')),
-      );
-    }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('$itemName added to cart!')),
+    );
   }
 
   @override
@@ -70,6 +57,23 @@ class _StorePageState extends State<StorePage> {
       appBar: AppBar(
         title: Text('Store'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.shopping_cart),
+            onPressed: () {
+              // Navigate to the Checkout Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CheckoutPage(
+                    cartItems: cartItems,
+                    userPoints: userPoints,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -90,17 +94,20 @@ class _StorePageState extends State<StorePage> {
               childAspectRatio: 0.8,
               children: [
                 _buildStoreItem(
-                    'Cool Sunglasses', 10, 'assets/images/sunglasses.png'),
-                _buildStoreItem('Trendy Hat', 15, 'assets/images/hat.jpg'),
-                _buildStoreItem('Inhaler', 5, 'assets/images/inhaler.jpg'),
-                _buildStoreItem('Energy Drink', 18, 'assets/images/drink.png'),
-                _buildStoreItem('Mouse', 100, 'assets/images/mouse.jpg'),
+                    'Cool Sunglasses', 10, 'assets/images/sunglasses.png', 500),
+                _buildStoreItem('Trendy Hat', 15, 'assets/images/hat.jpg', 800),
+                _buildStoreItem('Inhaler', 5, 'assets/images/inhaler.jpg', 300),
                 _buildStoreItem(
-                    'Dumbell(10kg)', 150, 'assets/images/dumbell.jpg'),
-                _buildStoreItem('Towel', 20, 'assets/images/towel.jpg'),
-                _buildStoreItem('Hand Grip', 15, 'assets/images/handgrip.jpg'),
-                _buildStoreItem('Shaver', 10, 'assets/images/shaver.jpg'),
-                _buildStoreItem('Track suit', 150, 'assets/images/track.jpg'),
+                    'Energy Drink', 18, 'assets/images/drink.png', 1000),
+                _buildStoreItem('Mouse', 100, 'assets/images/mouse.jpg', 2500),
+                _buildStoreItem(
+                    'Dumbell(10kg)', 150, 'assets/images/dumbell.png', 3000),
+                _buildStoreItem('Towel', 20, 'assets/images/towel.jpg', 600),
+                _buildStoreItem(
+                    'Hand Grip', 15, 'assets/images/handgrip.jpg', 700),
+                _buildStoreItem('Shaver', 10, 'assets/images/shaver.jpg', 500),
+                _buildStoreItem(
+                    'Track suit', 150, 'assets/images/track.jpg', 3500),
               ],
             ),
           ),
@@ -109,7 +116,8 @@ class _StorePageState extends State<StorePage> {
     );
   }
 
-  Widget _buildStoreItem(String itemName, int cost, String imagePath) {
+  Widget _buildStoreItem(
+      String itemName, int cost, String imagePath, int priceInCents) {
     return Card(
       elevation: 5,
       margin: EdgeInsets.all(8.0),
@@ -120,7 +128,7 @@ class _StorePageState extends State<StorePage> {
             width: 100,
             decoration: BoxDecoration(
               image: DecorationImage(
-                image: AssetImage(imagePath), // Local asset image
+                image: AssetImage(imagePath),
                 fit: BoxFit.cover,
               ),
             ),
@@ -130,10 +138,10 @@ class _StorePageState extends State<StorePage> {
             child: Text(itemName,
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
           ),
-          Text('$cost points',
+          Text('$cost points or \$${priceInCents / 100}',
               style: TextStyle(fontSize: 16, color: Colors.purple.shade100)),
           ElevatedButton(
-            onPressed: () => _redeemItem(cost, itemName),
+            onPressed: () => _addToCart(itemName, cost, priceInCents),
             child: Text('Add to Cart'),
           ),
         ],
