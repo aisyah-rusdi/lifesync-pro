@@ -23,8 +23,8 @@ class _TaskPage extends State<TaskPage> {
   
   List activityList = [
     ['Exercise', false, 0, 10, 1],
-    ['Study', false, 0, 1800, 1],
-    ['Meditate', false, 0, 1800, 1],
+    ['Study', false, 0, 10, 1],
+    ['Meditate', false, 0, 10, 1],
   ];
 
   @override

@@ -12,7 +12,7 @@ class LeaderboardPage extends StatefulWidget {
 class _LeaderboardPageState extends State<LeaderboardPage> {
   List<Map<String, dynamic>> leaderboard = [];
   bool isLoading = true;
-  String selectedFilter = 'points'; // Default filter
+  String selectedFilter = 'exerciseScore'; // Default filter
   String? currentUserId;
   int? currentUserRank;
 
@@ -48,7 +48,6 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       return {
         'id': doc.id,
         'name': (data['first name'] ?? 'Unknown') + ' ' + (data['last name'] ?? ''),
-        'points': data['points'] ?? 0,
         'meditateScore': data['meditateScore'] ?? 0,
         'exerciseScore': data['exerciseScore'] ?? 0,
         'studyScore': data['studyScore'] ?? 0,
@@ -83,70 +82,69 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          selectedFilter == 'points'
-          ? 'Total Points'
-          : selectedFilter.toUpperCase(),
-        ),
-        actions: [
-          PopupMenuButton<String>(
-            onSelected: updateFilter,
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'points',
-                child: Text('Total Points'),
+      body: isLoading
+    ? const Center(child: CircularProgressIndicator())
+    : Column(
+        children: [
+          if (currentUserRank != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Your Rank: #$currentUserRank",
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  DropdownButton<String>(
+                    value: selectedFilter,
+                    onChanged: (String? newValue) {
+                      if (newValue != null) {
+                        updateFilter(newValue);
+                      }
+                    },
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'meditateScore',
+                        child: Text('Meditation Score'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'exerciseScore',
+                        child: Text('Exercise Score'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'studyScore',
+                        child: Text('Study Score'),
+                      ),
+                    ],
+                    underline: Container(),
+                    icon: const Icon(Icons.filter_list, color: Colors.blueAccent),
+                  ),
+                ],
               ),
-              const PopupMenuItem(
-                value: 'meditateScore',
-                child: Text('Meditation Score'),
-              ),
-              const PopupMenuItem(
-                value: 'exerciseScore',
-                child: Text('Exercise Score'),
-              ),
-              const PopupMenuItem(
-                value: 'studyScore',
-                child: Text('Study Score'),
-              ),
-            ],
-            icon: const Icon(Icons.filter_list),
+            ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: leaderboard.length,
+              padding: const EdgeInsets.all(16.0),
+              itemBuilder: (context, index) {
+                final user = leaderboard[index];
+                return _buildLeaderboardCard(
+                  rank: index + 1,
+                  name: user['name'],
+                  score: user[selectedFilter],
+                  scoreLabel: selectedFilter,
+                );
+              },
+            ),
           ),
         ],
       ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              children: [
-                if (currentUserRank != null)
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Text(
-                      "Your Rank: #$currentUserRank",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blueAccent,
-                      ),
-                    ),
-                  ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: leaderboard.length,
-                    padding: const EdgeInsets.all(16.0),
-                    itemBuilder: (context, index) {
-                      final user = leaderboard[index];
-                      return _buildLeaderboardCard(
-                        rank: index + 1,
-                        name: user['name'],
-                        score: user[selectedFilter],
-                        scoreLabel: selectedFilter,
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
+
     );
   }
 

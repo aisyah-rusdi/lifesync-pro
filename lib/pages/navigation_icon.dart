@@ -35,7 +35,7 @@ class HomePage extends StatefulWidget{
     }
 
     List<Widget>get _pages => [
-      dashboard(),
+      Dashboard(),
       //ChallengePage(),
       ToDoListPage(),
       LeaderboardPage(),

@@ -268,25 +268,9 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  // Sign out method with navigation to LoginPage
-  /*Future<void> signOutAndNavigateToLogin() async {
-    await FirebaseAuth.instance.signOut();
-    
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginPage(
-            showRegisterPage: navigateToRegisterPage),
-        ),
-      );
-    }
-  }*/
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[200],
       appBar: AppBar(
         title: const Text("Profile"),
         leading: IconButton(
@@ -296,7 +280,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 context); // This will take you back to the previous page
           },
         ),
-        backgroundColor: Colors.white,
+        backgroundColor: const Color.fromARGB(255, 139, 190, 228),
         foregroundColor: Colors.black,
         elevation: 0,
       ),

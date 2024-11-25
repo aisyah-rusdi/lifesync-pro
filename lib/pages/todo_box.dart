@@ -8,6 +8,7 @@ class TodoBox  extends StatelessWidget{
   final bool taskCompleted;
   final Function(bool?)? onChanged;
   final Function(BuildContext)? deleteFunction;
+  final Function(BuildContext)? editFunction;
 
   const TodoBox({
     super.key,
@@ -15,6 +16,7 @@ class TodoBox  extends StatelessWidget{
     required this.taskCompleted,
     required this.onChanged,
     required this.deleteFunction,
+    required this.editFunction,
   });
 
   @override
@@ -25,6 +27,12 @@ class TodoBox  extends StatelessWidget{
         endActionPane: ActionPane(
           motion: StretchMotion(), 
           children: [
+            SlidableAction(
+              onPressed: editFunction,
+              icon: Icons.edit,
+              backgroundColor: Colors.blue.shade300,
+              borderRadius: BorderRadius.circular(12),
+            ),
             SlidableAction(
               onPressed: deleteFunction,
               icon: Icons.delete,
