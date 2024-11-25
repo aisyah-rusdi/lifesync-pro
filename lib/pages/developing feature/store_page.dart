@@ -138,8 +138,9 @@ class _StorePageState extends State<StorePage> {
             child: Text(itemName,
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
           ),
-          Text('$cost points or \$${priceInCents / 100}',
-              style: TextStyle(fontSize: 16, color: Colors.purple.shade100)),
+          Text('$cost points\nRM${priceInCents / 100}',
+              style: TextStyle(
+                  fontSize: 14, color: const Color.fromARGB(255, 5, 3, 5))),
           ElevatedButton(
             onPressed: () => _addToCart(itemName, cost, priceInCents),
             child: Text('Add to Cart'),

@@ -72,7 +72,7 @@ flutter:
   assets:
      - assets/audio/
      - assets/images/
-     - assets/images/shaver.jpg
+   
 
 
   # An image asset can refer to one or more resolution-specific "variants", see
