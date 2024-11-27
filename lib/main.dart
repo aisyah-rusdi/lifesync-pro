@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 
+<<<<<<< Updated upstream
 void main() {
+=======
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+>>>>>>> Stashed changes
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
+<<<<<<< Updated upstream
   const MyApp({super.key});
+=======
+  const MyApp({Key? key}) : super(key: key);
+>>>>>>> Stashed changes
 
   // This widget is the root of your application.
   @override
@@ -35,6 +45,7 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+<<<<<<< Updated upstream
 
 class MyHomePage extends StatefulWidget {
   const MyHomePage({super.key, required this.title});
@@ -123,3 +134,5 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+=======
+>>>>>>> Stashed changes

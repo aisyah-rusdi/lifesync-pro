@@ -3,9 +3,16 @@ buildscript {
         google()
         jcenter()
     }
+<<<<<<< Updated upstream
 
     dependencies {
         classpath 'com.google.gms.google-services:4.4.2' 
+=======
+     dependencies { 
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath 'com.google.gms:google-services:4.3.15'
+        classpath 'com.android.tools.build:gradle:8.1.1'
+>>>>>>> Stashed changes
     }
 }
 
