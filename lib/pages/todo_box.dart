@@ -3,9 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 
-class TodoBox  extends StatelessWidget{
+class TodoBox extends StatelessWidget {
   final String taskName;
   final bool taskCompleted;
+  final DateTime dateTime;
   final Function(bool?)? onChanged;
   final Function(BuildContext)? deleteFunction;
 
@@ -13,6 +14,7 @@ class TodoBox  extends StatelessWidget{
     super.key,
     required this.taskName,
     required this.taskCompleted,
+    required this.dateTime,
     required this.onChanged,
     required this.deleteFunction,
   });
@@ -23,43 +25,50 @@ class TodoBox  extends StatelessWidget{
       padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
       child: Slidable(
         endActionPane: ActionPane(
-          motion: StretchMotion(), 
+          motion: StretchMotion(),
           children: [
             SlidableAction(
               onPressed: deleteFunction,
               icon: Icons.delete,
               backgroundColor: Colors.red.shade300,
               borderRadius: BorderRadius.circular(12),
-              )
-            ],
-          ),
-
+            )
+          ],
+        ),
         child: Container(
           padding: EdgeInsets.all(8),
           decoration: BoxDecoration(
             color: Colors.grey[300],
             borderRadius: BorderRadius.circular(12),
           ),
-        
           child: Row(
             children: [
               Checkbox(
-                value: taskCompleted, 
+                value: taskCompleted,
                 onChanged: onChanged,
                 activeColor: Colors.black,
-                ),
-        
-                Text(
-                  taskName,
-                  style: TextStyle(
-                    decoration: taskCompleted
-                    ? TextDecoration.lineThrough 
-                    : TextDecoration.none,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    taskName,
+                    style: TextStyle(
+                      decoration: taskCompleted
+                          ? TextDecoration.lineThrough
+                          : TextDecoration.none,
+                    ),
                   ),
-                )
+                  SizedBox(height: 5),
+                  Text(
+                    "${dateTime.toLocal()}"
+                        .split('.')[0], // Format date-time string
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ],
+              )
             ],
           ),
-          
         ),
       ),
     );

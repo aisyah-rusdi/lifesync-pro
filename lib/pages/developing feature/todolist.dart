@@ -27,55 +27,79 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
   Future<void> _fetchToDoList() async {
     if (_currentUser != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .get();
-      setState(() {
-        _toDoList = snapshot.docs
-            .map((doc) => {
-                  "id": doc.id,
-                  "taskName": doc.data()['taskName'] ?? 'Unnamed Task',
-                  "completed": doc.data()['completed'] ?? false,
-                })
-            .toList();
-      });
+      try {
+        final snapshot = await _firestore
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('todos')
+            .get();
+
+        setState(() {
+          _toDoList = snapshot.docs
+              .map((doc) => {
+                    "id": doc.id,
+                    "taskName": doc.data()['taskName'] ?? 'Unnamed Task',
+                    "completed": doc.data()['completed'] ?? false,
+                    "dateTime": doc.data().containsKey('dateTime')
+                        ? (doc.data()['dateTime'] as Timestamp).toDate()
+                        : DateTime.now(),
+                  })
+              .toList();
+        });
+      } catch (e) {
+        print("Error fetching to-do list: $e");
+      }
     }
   }
 
   Future<void> _addTask(String taskName) async {
     if (_currentUser != null && taskName.isNotEmpty) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .add({'taskName': taskName, 'completed': false});
-      _fetchToDoList();
+      try {
+        await _firestore
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('todos')
+            .add({
+          'taskName': taskName,
+          'completed': false,
+          'dateTime': FieldValue.serverTimestamp(),
+        });
+        _fetchToDoList();
+      } catch (e) {
+        print("Error adding task: $e");
+      }
     }
   }
 
   Future<void> _toggleTaskCompletion(String taskId, bool isCompleted) async {
     if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .update({'completed': !isCompleted});
-      _fetchToDoList();
+      try {
+        await _firestore
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('todos')
+            .doc(taskId)
+            .update({'completed': !isCompleted});
+        _fetchToDoList();
+      } catch (e) {
+        print("Error toggling task completion: $e");
+      }
     }
   }
 
   Future<void> _deleteTask(String taskId) async {
     if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .delete();
-      _fetchToDoList();
+      try {
+        await _firestore
+            .collection('users')
+            .doc(_currentUser!.uid)
+            .collection('todos')
+            .doc(taskId)
+            .delete();
+        _fetchToDoList();
+      } catch (e) {
+        print("Error deleting task: $e");
+      }
     }
   }
 
@@ -125,6 +149,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
                 return TodoBox(
                   taskName: task['taskName'],
                   taskCompleted: task['completed'],
+                  dateTime: task['dateTime'],
                   onChanged: (value) =>
                       _toggleTaskCompletion(task['id'], task['completed']),
                   deleteFunction: (context) => _deleteTask(task['id']),

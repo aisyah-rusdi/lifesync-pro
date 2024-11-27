@@ -1,19 +1,18 @@
-// ignore_for_file: prefer_const_constructors, camel_case_types, prefer_const_literals_to_create_immutables, sort_child_properties_last
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, sort_child_properties_last
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_firebase_project/pages/task_page.dart';
-import 'package:flutter_firebase_project/pages/todo_box.dart';
+import 'todo_box.dart';
 
-class dashboard extends StatefulWidget {
-  const dashboard({Key? key}) : super(key: key);
+class Dashboard extends StatefulWidget {
+  const Dashboard({Key? key}) : super(key: key);
 
   @override
-  State<dashboard> createState() => _DashboardState();
+  State<Dashboard> createState() => _DashboardState();
 }
 
-class _DashboardState extends State<dashboard> {
+class _DashboardState extends State<Dashboard> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
   late User? _currentUser;
@@ -39,6 +38,9 @@ class _DashboardState extends State<dashboard> {
                   "id": doc.id,
                   "taskName": doc.data()['taskName'] ?? 'Unnamed Task',
                   "completed": doc.data()['completed'] ?? false,
+                  "dateTime": doc.data().containsKey('dateTime')
+                      ? (doc.data()['dateTime'] as Timestamp).toDate()
+                      : DateTime.now(),
                 })
             .toList();
       });
@@ -51,7 +53,11 @@ class _DashboardState extends State<dashboard> {
           .collection('users')
           .doc(_currentUser!.uid)
           .collection('todos')
-          .add({'taskName': taskName, 'completed': false});
+          .add({
+        'taskName': taskName,
+        'completed': false,
+        'dateTime': FieldValue.serverTimestamp(),
+      });
       _fetchToDoList();
     }
   }
@@ -64,6 +70,18 @@ class _DashboardState extends State<dashboard> {
           .collection('todos')
           .doc(taskId)
           .update({'completed': !isCompleted});
+      _fetchToDoList();
+    }
+  }
+
+  Future<void> _deleteTask(String taskId) async {
+    if (_currentUser != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .doc(taskId)
+          .delete();
       _fetchToDoList();
     }
   }
@@ -98,107 +116,73 @@ class _DashboardState extends State<dashboard> {
     );
   }
 
-  Future<void> _deleteTask(String taskId) async {
-    if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .delete();
-      _fetchToDoList(); // Re-fetch the updated list
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SingleChildScrollView(
-  child: Column(
-    children: [
-      // To-Do List Container with "Add Task" button inside
-      Container(
-        width: double.infinity,
-        padding: EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.grey[200],
-          borderRadius: BorderRadius.circular(15),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.shade500,
-              offset: Offset(4.0, 4.0),
-              blurRadius: 15.0,
-              spreadRadius: 1.0,
-            ),
-            BoxShadow(
-              color: Colors.white,
-              offset: Offset(-4.0, -4.0),
-              blurRadius: 15.0,
-              spreadRadius: 1.0,
-            ),
-          ],
-        ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'To-Do List',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.shade500,
+                    offset: Offset(4.0, 4.0),
+                    blurRadius: 15.0,
+                    spreadRadius: 1.0,
                   ),
-                ),
-                IconButton(
-                  icon: Icon(Icons.add),
-                  onPressed: _showAddTaskDialog,
-                ),
-              ],
-            ),
-            SizedBox(height: 10),
-            // Using Expanded to prevent overflow
-            SizedBox(
-              height: 700,
-              child: ListView.builder(
-                itemCount: _toDoList.length,
-                itemBuilder: (context, index) {
-                  final task = _toDoList[index];
-                  return TodoBox(
-                    taskName: task['taskName'],
-                    taskCompleted: task['completed'],
-                    onChanged: (value) =>
-                        _toggleTaskCompletion(task['id'], task['completed']),
-                    deleteFunction: (context) => _deleteTask(task['id']),
-                  );
-                },
+                  BoxShadow(
+                    color: Colors.white,
+                    offset: Offset(-4.0, -4.0),
+                    blurRadius: 15.0,
+                    spreadRadius: 1.0,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'To-Do List',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: _showAddTaskDialog,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  SizedBox(
+                    height: 700,
+                    child: ListView.builder(
+                      itemCount: _toDoList.length,
+                      itemBuilder: (context, index) {
+                        final task = _toDoList[index];
+                        return TodoBox(
+                          taskName: task['taskName'],
+                          taskCompleted: task['completed'],
+                          onChanged: (value) => _toggleTaskCompletion(
+                              task['id'], task['completed']),
+                          deleteFunction: (context) => _deleteTask(task['id']),
+                          dateTime: task['dateTime'],
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
-        ),
-      ),
-    ],
-  ),
-),
-
-
-      // floating action button
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        width: 130,
-        height: 130,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => TaskPage()),
-            );
-          },
-          child: Icon(Icons.play_arrow, size: 70), // Icon size to make it large
-          backgroundColor: const Color.fromARGB(255, 254, 118, 108),
-          shape: CircleBorder(), // Ensures the button is circular
-          elevation: 10, 
         ),
       ),
     );
