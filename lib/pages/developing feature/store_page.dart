@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'checkout.dart'; // Import the CheckoutPage
+import 'checkout.dart'; // Import the updated CheckoutPage
 
 class StorePage extends StatefulWidget {
   const StorePage({Key? key}) : super(key: key);
@@ -14,7 +14,7 @@ class _StorePageState extends State<StorePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  int userPoints = 0;
+  int userPoints = 10;
   List<Map<String, dynamic>> cartItems = []; // To store cart items
 
   @override
@@ -30,8 +30,7 @@ class _StorePageState extends State<StorePage> {
       userDoc.snapshots().listen((snapshot) {
         if (snapshot.exists) {
           setState(() {
-            userPoints = snapshot['points'] ??
-                0; // Default to 0 if points field is missing
+            userPoints = snapshot['points'] ?? 0; // Default to 0 if missing
           });
         }
       });
@@ -51,6 +50,30 @@ class _StorePageState extends State<StorePage> {
     );
   }
 
+  void _navigateToCheckout() async {
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CheckoutPage(
+          cartItems: cartItems,
+          userPoints: userPoints,
+        ),
+      ),
+    );
+
+    // Update points if CheckoutPage returns new points value
+    if (result != null && result is int) {
+      setState(() {
+        userPoints = result; // Update user points after purchase
+      });
+    }
+
+    // Clear cart after returning from checkout
+    setState(() {
+      cartItems.clear();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -60,18 +83,7 @@ class _StorePageState extends State<StorePage> {
         actions: [
           IconButton(
             icon: Icon(Icons.shopping_cart),
-            onPressed: () {
-              // Navigate to the Checkout Page
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CheckoutPage(
-                    cartItems: cartItems,
-                    userPoints: userPoints,
-                  ),
-                ),
-              );
-            },
+            onPressed: _navigateToCheckout,
           ),
         ],
       ),
