@@ -73,6 +73,16 @@ flutter:
   assets:
     - assets/audio/
     - assets/images/
+    - assets/images/sunglasses.png
+    - assets/images/hat.jpg
+    - assets/images/inhaler.jpg
+    - assets/images/drink.png
+    - assets/images/mouse.png
+    - assets/images/dumbell.png
+    - assets/images/towel.png
+    - assets/images/handgrip.png
+    - assets/images/shaver.png
+    - assets/images/track.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

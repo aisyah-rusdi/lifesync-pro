@@ -71,7 +71,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 return ListTile(
                   title: Text(item['itemName']),
                   subtitle: Text(
-                      '${item['cost']} points or \$${item['priceInCents'] / 100}'),
+                      '${item['cost']} points or \RM${item['priceInCents'] / 100}'),
                 );
               },
             ),
@@ -86,7 +86,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: TextStyle(fontSize: 18)),
                 Text('Total Points: $totalPoints',
                     style: TextStyle(fontSize: 18)),
-                Text('Total Price: \$${totalPriceInCents / 100}',
+                Text('Total Price: \RM${totalPriceInCents / 100}',
                     style: TextStyle(fontSize: 18)),
                 SizedBox(height: 16.0),
                 Row(
