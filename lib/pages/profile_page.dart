@@ -16,6 +16,7 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   Uint8List? _image; // Decode image data
   String? _encodedImage; // Base64-encoded string
 
@@ -81,6 +82,113 @@ class _ProfilePageState extends State<ProfilePage> {
   String height = "";
   bool isLoading = true;
 
+  // Achievements list
+  List<Map<String, dynamic>> achievements = [
+    {
+      "id": 1,
+      "name": "10 Exercises",
+      "condition": "exercise",
+      "target": 10,
+      "progress": 0, // Progress will be updated dynamically
+      "unlocked": false,
+    },
+    {
+      "id": 2,
+      "name": "20 Study",
+      "condition": "study",
+      "target": 20,
+      "progress": 0,
+      "unlocked": false,
+    },
+    {
+      "id": 3,
+      "name": "20 Meditation",
+      "condition": "meditate",
+      "target": 20,
+      "progress": 0, // Progress will be updated dynamically
+      "unlocked": false,
+    },
+    {
+      "id": 4,
+      "name": "50 Exercises",
+      "condition": "exercise",
+      "target": 50,
+      "progress": 0,
+      "unlocked": false,
+    },
+    {
+      "id": 5,
+      "name": "50 Study",
+      "condition": "study",
+      "target": 50,
+      "progress": 0, // Progress will be updated dynamically
+      "unlocked": false,
+    },
+    {
+      "id": 6,
+      "name": "50 Meditate",
+      "condition": "meditate",
+      "target": 50,
+      "progress": 0,
+      "unlocked": false,
+    },
+    {
+      "id": 7,
+      "name": "100 Exericses",
+      "condition": "exercise",
+      "target": 100,
+      "progress": 0, // Progress will be updated dynamically
+      "unlocked": false,
+    },
+    {
+      "id": 8,
+      "name": "100 Study",
+      "condition": "study",
+      "target": 100,
+      "progress": 0,
+      "unlocked": false,
+    },
+  ];
+
+  // Update progress for a specific task
+  void updateAchievementProgress(String taskType, int increment) async {
+    User? user = _auth.currentUser;
+    if (user == null) return;
+
+    setState(() {
+      for (var achievement in achievements) {
+        if (achievement['condition'] == taskType) {
+          achievement['progress'] += increment;
+
+          if (achievement['progress'] >= achievement['target']) {
+            achievement['unlocked'] = true;
+            onAchievementUnlocked(achievement['name']);
+          }
+        }
+      }
+    });
+
+    // Update Firestore with new progress
+    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      '${taskType}Score': FieldValue.increment(increment),
+    });
+  }
+
+  // Show unlocked achievement dialog
+  void onAchievementUnlocked(String name) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Achievement Unlocked!"),
+        content: Text("$name"),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text("OK")),
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -114,6 +222,14 @@ class _ProfilePageState extends State<ProfilePage> {
             exerciseScore = userDoc.get('exerciseScore') ?? 0;
             studyScore = userDoc.get('studyScore') ?? 0;
             meditateScore = userDoc.get('meditateScore') ?? 0;
+
+            for (var achievement in achievements) {
+              String condition = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition}Score') ?? 0;
+              if (achievement['progress'] >= achievement['target']) {
+                achievement['unlocked'] = true;
+              }
+            }
           } else {
             name = "No data found";
           }
@@ -301,24 +417,23 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(
-                context); // This will take you back to the previous page
-          },
+        appBar: AppBar(
+          title: const Text("Profile"),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(
+                  context); // This will take you back to the previous page
+            },
+          ),
+          backgroundColor: const Color.fromARGB(255, 139, 190, 228),
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        backgroundColor: const Color.fromARGB(255, 139, 190, 228),
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
+        body: SingleChildScrollView(
+          child: Padding(
               padding: const EdgeInsets.all(16.0),
-              child: ListView(
+              child: Column(
                 children: [
                   Center(
                     child: Column(
@@ -364,11 +479,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    "Personal Info",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Personal Info',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   // Display the profile info
@@ -400,9 +521,69 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     );
                   }),
+
+                  // Achievement Board
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Achievements',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: GridView.builder(
+                          shrinkWrap:
+                              true, // Makes the GridView's height bounded
+                          physics:
+                              NeverScrollableScrollPhysics(), // Disable GridView's scroll
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 10, // Space between columns
+                            mainAxisSpacing: 10, // Space between rows
+                          ),
+                          itemCount: achievements.length,
+                          itemBuilder: (context, index) {
+                            final achievement = achievements[index];
+                            return Card(
+                              elevation: 5,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    achievement['unlocked']
+                                        ? Icons.emoji_events
+                                        : Icons.lock,
+                                    color: achievement['unlocked']
+                                        ? Colors.yellow
+                                        : Colors.grey,
+                                    size: 50,
+                                  ),
+                                  SizedBox(height: 10),
+                                  Text(
+                                    achievement['name'],
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  ),
+                                  Text(
+                                    achievement['unlocked']
+                                        ? ""
+                                        : "Progress: ${achievement['progress']}/${achievement['target']}",
+                                  ),
+                                ],
+                              ),
+                            );
+                          }))
                 ],
               )),
-    );
+        ));
   }
 }
 

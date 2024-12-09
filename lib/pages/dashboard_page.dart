@@ -14,9 +14,6 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   final _auth = FirebaseAuth.instance;
-  final PageController _pageController =
-      PageController(); // Controller for cards
-  int _currentCardIndex = 0; // Tracks the visible card index
 
   @override
   Widget build(BuildContext context) {
@@ -66,85 +63,44 @@ class _DashboardState extends State<Dashboard> {
                   "Task Progress",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
-
-                // Progress Indicator for Cards
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(3, (index) {
-                    return Container(
-                      width: 115,
-                      height: 5,
-                      decoration: BoxDecoration(
-                        color: _currentCardIndex == index
-                            ? Colors.blue
-                            : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(5),
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 8),
-
+                const SizedBox(height: 10),
                 // Task Progress Cards
                 SizedBox(
-                  height: 140,
-                  //child: ListView.separated(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    onPageChanged: (index) {
-                      setState(() {
-                        _currentCardIndex = index; // Update current card index
-                      });
-                    },
-                    //physics: const BouncingScrollPhysics(),
-                    //scrollDirection: Axis.horizontal,
+                  height: 150,
+                  child: ListView.separated(
+                    physics: const BouncingScrollPhysics(),
+                    scrollDirection: Axis.horizontal,
                     itemCount: profileTaskProgressCards.length,
-                    //separatorBuilder: (context, index) =>
-                    //  const SizedBox(width: 10),
+                    separatorBuilder: (context, index) => const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final card = profileTaskProgressCards[index];
                       final scores = taskScores.values.toList();
-
-                      return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                          child: Container(
-                            width: 180,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              border: Border.all(color: Colors.grey.shade300),
-                              borderRadius: BorderRadius.circular(12),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.2),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 4),
+                      return Container(
+                        width: 180,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Card(
+                          shadowColor: Colors.black12,
+                          child: Padding(
+                            padding: const EdgeInsets.all(15.0),
+                            child: Column(
+                              children: [
+                                Icon(card.icon, size: 40),
+                                const SizedBox(height: 5),
+                                Text(card.title, textAlign: TextAlign.center),
+                                const SizedBox(height: 5),
+                                Text(
+                                  "${scores[index]}",
+                                  style: const TextStyle(
+                                      fontSize: 20, fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
-                            child: Card(
-                              shadowColor: Colors.black12,
-                              child: Padding(
-                                padding: const EdgeInsets.all(15.0),
-                                child: Column(
-                                  children: [
-                                    Icon(card.icon,
-                                        size: 40, color: Colors.blue),
-                                    const SizedBox(height: 5),
-                                    Text(card.title,
-                                        textAlign: TextAlign.center),
-                                    const SizedBox(height: 5),
-                                    Text(
-                                      "${scores[index]}",
-                                      style: const TextStyle(
-                                          fontSize: 20,
-                                          fontWeight: FontWeight.bold),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ));
+                          ),
+                        ),
+                      );
                     },
                   ),
                 ),
