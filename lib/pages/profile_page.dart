@@ -7,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'package:image_picker/image_picker.dart'; // For image picking
+import 'component/exercise_achievement.dart';
+import 'component/study_achievement.dart';
+import 'component/meditate_achievement.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -16,7 +19,6 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
   Uint8List? _image; // Decode image data
   String? _encodedImage; // Base64-encoded string
 
@@ -82,112 +84,11 @@ class _ProfilePageState extends State<ProfilePage> {
   String height = "";
   bool isLoading = true;
 
-  // Achievements list
   List<Map<String, dynamic>> achievements = [
-    {
-      "id": 1,
-      "name": "10 Exercises",
-      "condition": "exercise",
-      "target": 10,
-      "progress": 0, // Progress will be updated dynamically
-      "unlocked": false,
-    },
-    {
-      "id": 2,
-      "name": "20 Study",
-      "condition": "study",
-      "target": 20,
-      "progress": 0,
-      "unlocked": false,
-    },
-    {
-      "id": 3,
-      "name": "20 Meditation",
-      "condition": "meditate",
-      "target": 20,
-      "progress": 0, // Progress will be updated dynamically
-      "unlocked": false,
-    },
-    {
-      "id": 4,
-      "name": "50 Exercises",
-      "condition": "exercise",
-      "target": 50,
-      "progress": 0,
-      "unlocked": false,
-    },
-    {
-      "id": 5,
-      "name": "50 Study",
-      "condition": "study",
-      "target": 50,
-      "progress": 0, // Progress will be updated dynamically
-      "unlocked": false,
-    },
-    {
-      "id": 6,
-      "name": "50 Meditate",
-      "condition": "meditate",
-      "target": 50,
-      "progress": 0,
-      "unlocked": false,
-    },
-    {
-      "id": 7,
-      "name": "100 Exericses",
-      "condition": "exercise",
-      "target": 100,
-      "progress": 0, // Progress will be updated dynamically
-      "unlocked": false,
-    },
-    {
-      "id": 8,
-      "name": "100 Study",
-      "condition": "study",
-      "target": 100,
-      "progress": 0,
-      "unlocked": false,
-    },
+    {"icon": Icons.directions_run},
+    {"icon": CupertinoIcons.book_fill},
+    {"icon": Icons.self_improvement}
   ];
-
-  // Update progress for a specific task
-  void updateAchievementProgress(String taskType, int increment) async {
-    User? user = _auth.currentUser;
-    if (user == null) return;
-
-    setState(() {
-      for (var achievement in achievements) {
-        if (achievement['condition'] == taskType) {
-          achievement['progress'] += increment;
-
-          if (achievement['progress'] >= achievement['target']) {
-            achievement['unlocked'] = true;
-            onAchievementUnlocked(achievement['name']);
-          }
-        }
-      }
-    });
-
-    // Update Firestore with new progress
-    await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-      '${taskType}Score': FieldValue.increment(increment),
-    });
-  }
-
-  // Show unlocked achievement dialog
-  void onAchievementUnlocked(String name) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Achievement Unlocked!"),
-        content: Text("$name"),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(context), child: Text("OK")),
-        ],
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -222,14 +123,6 @@ class _ProfilePageState extends State<ProfilePage> {
             exerciseScore = userDoc.get('exerciseScore') ?? 0;
             studyScore = userDoc.get('studyScore') ?? 0;
             meditateScore = userDoc.get('meditateScore') ?? 0;
-
-            for (var achievement in achievements) {
-              String condition = achievement['condition'];
-              achievement['progress'] = userDoc.get('${condition}Score') ?? 0;
-              if (achievement['progress'] >= achievement['target']) {
-                achievement['unlocked'] = true;
-              }
-            }
           } else {
             name = "No data found";
           }
@@ -431,10 +324,9 @@ class _ProfilePageState extends State<ProfilePage> {
           elevation: 0,
         ),
         body: SingleChildScrollView(
-          child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(children: [
                   Center(
                     child: Column(
                       children: [
@@ -537,53 +429,80 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 20),
-                      child: GridView.builder(
-                          shrinkWrap:
-                              true, // Makes the GridView's height bounded
-                          physics:
-                              NeverScrollableScrollPhysics(), // Disable GridView's scroll
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 10, // Space between columns
-                            mainAxisSpacing: 10, // Space between rows
-                          ),
-                          itemCount: achievements.length,
-                          itemBuilder: (context, index) {
-                            final achievement = achievements[index];
-                            return Card(
-                              elevation: 5,
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: GridView.builder(
+                      shrinkWrap: true, // Makes the GridView's height bounded
+                      physics:
+                          NeverScrollableScrollPhysics(), // Disable GridView's scroll
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10, // Space between columns
+                        mainAxisSpacing: 10, // Space between rows
+                      ),
+                      itemCount: 3,
+                      itemBuilder: (context, index) {
+                        final achievement = achievements[index];
+                        return GestureDetector(
+                          onTap: () {
+                            // Show the bottom sheet when the exercise icon is tapped
+                            if (achievement['icon'] == Icons.directions_run) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return ExerciseAchievements();
+                                },
+                              );
+                            } else if (achievement['icon'] ==
+                                CupertinoIcons.book_fill) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return StudyAchievements();
+                                },
+                              );
+                            } else if (achievement['icon'] ==
+                                Icons.self_improvement) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return MeditateAchievements();
+                                },
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Center(
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(
-                                    achievement['unlocked']
-                                        ? Icons.emoji_events
-                                        : Icons.lock,
-                                    color: achievement['unlocked']
-                                        ? Colors.yellow
-                                        : Colors.grey,
+                                    achievement['icon'],
                                     size: 50,
-                                  ),
-                                  SizedBox(height: 10),
-                                  Text(
-                                    achievement['name'],
-                                    style:
-                                        TextStyle(fontWeight: FontWeight.bold),
-                                  ),
-                                  Text(
-                                    achievement['unlocked']
-                                        ? ""
-                                        : "Progress: ${achievement['progress']}/${achievement['target']}",
                                   ),
                                 ],
                               ),
-                            );
-                          }))
-                ],
-              )),
-        ));
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                ]))));
   }
 }
 

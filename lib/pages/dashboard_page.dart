@@ -71,7 +71,8 @@ class _DashboardState extends State<Dashboard> {
                     physics: const BouncingScrollPhysics(),
                     scrollDirection: Axis.horizontal,
                     itemCount: profileTaskProgressCards.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 10),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final card = profileTaskProgressCards[index];
                       final scores = taskScores.values.toList();
@@ -94,7 +95,8 @@ class _DashboardState extends State<Dashboard> {
                                 Text(
                                   "${scores[index]}",
                                   style: const TextStyle(
-                                      fontSize: 20, fontWeight: FontWeight.bold),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -135,14 +137,14 @@ class ProfileTaskProgressCard {
 const profileTaskProgressCards = [
   ProfileTaskProgressCard(
     title: "Exercise",
-    icon: CupertinoIcons.sportscourt,
+    icon: Icons.directions_run,
   ),
   ProfileTaskProgressCard(
     title: "Study",
-    icon: CupertinoIcons.book,
+    icon: CupertinoIcons.book_fill,
   ),
   ProfileTaskProgressCard(
     title: "Meditate",
-    icon: CupertinoIcons.home,
+    icon: Icons.self_improvement,
   ),
 ];
