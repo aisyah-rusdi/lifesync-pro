@@ -20,6 +20,17 @@ class _TaskPage extends State<TaskPage> {
   bool isActivityRunning = false;
 
   int userPoints = 0;
+  int exerciseDaily = 0;
+  int exerciseMonthly = 0;
+  int exerciseYearly = 0;
+
+  int studyDaily = 0;
+  int studyMonthly = 0;
+  int studyYearly = 0;
+
+  int meditateDaily = 0;
+  int meditateMonthly = 0;
+  int meditateYearly = 0;
   
   List activityList = [
     ['Exercise', false, 0, 10, 1],
@@ -38,34 +49,110 @@ class _TaskPage extends State<TaskPage> {
     .collection('users')
     .doc(FirebaseAuth.instance.currentUser!.uid);
 
-  // Use a transaction to safely update the points field (avoid race condition)
+  DateTime now = DateTime.now();
+  String currentDate = "${now.year}-${now.month}-${now.day}";
+  int currentMonth = now.month;
+  int currentYear = now.year;
+
   await FirebaseFirestore.instance.runTransaction((transaction) async {
     final snapshot = await transaction.get(userDoc);
-    final currentPoints = snapshot['points'] ?? 0; // Default to 0 if field does not exist
+    if (!snapshot.exists) {
+      throw Exception("User document does not exist");
+    }
     final taskScore = snapshot[taskName] ?? 0;
 
-    transaction.update(userDoc, 
-    {'points': currentPoints + pointsToAdd,
-    taskName: taskScore + pointsToAdd,
+    // Get the current values for the task
+    var taskDaily = snapshot.data()?[taskName + 'Daily'] ?? 0;
+    var taskMonthly = snapshot.data()?[taskName + 'Monthly'] ?? 0;
+    var taskYearly = snapshot.data()?[taskName + 'Yearly'] ?? 0;
+    var taskDate = snapshot.data()?[taskName + 'Date'] ?? '';
+    var taskMonth = snapshot.data()?[taskName + 'Month'] ?? 0;
+    var taskYear = snapshot.data()?[taskName + 'Year'] ?? 0;
+
+    // Check and update daily points
+    if (taskDate == currentDate) {
+      // If the date is the same, just add to the daily score
+      transaction.update(userDoc, {
+        '$taskName' + 'Daily': taskDaily + pointsToAdd,
+      });
+    } else {
+      // Reset the daily points if it's a new day
+      transaction.update(userDoc, {
+        '$taskName' + 'Daily': pointsToAdd,
+        '$taskName' + 'Date': currentDate,
+      });
+    }
+
+    // Check and update monthly points
+    if (taskMonth == currentMonth) {
+      // If the month is the same, just add to the monthly score
+      transaction.update(userDoc, {
+        '$taskName' + 'Monthly': taskMonthly + pointsToAdd,
+      });
+    } else {
+      // Reset the monthly points if it's a new month
+      transaction.update(userDoc, {
+        '$taskName' + 'Monthly': pointsToAdd,
+        '$taskName' + 'Month': currentMonth,
+      });
+    }
+
+    // Check and update yearly points
+    if (taskYear == currentYear) {
+      // If the year is the same, just add to the yearly score
+      transaction.update(userDoc, {
+        '$taskName' + 'Yearly': taskYearly + pointsToAdd,
+      });
+    } else {
+      // Reset the yearly points if it's a new year
+      transaction.update(userDoc, {
+        '$taskName' + 'Yearly': pointsToAdd,
+        '$taskName' + 'Year': currentYear,
+      });
+    }
+
+    // Update the total points by adding the task's points to the current total
+    int currentUserPoints = snapshot.data()?['points'] ?? 0;
+    int updatedUserPoints = currentUserPoints + pointsToAdd;
+
+    // Update the total points field in Firestore
+    transaction.update(userDoc, {
+      'points': updatedUserPoints,
+      taskName: taskScore + pointsToAdd,
     });
   });
 }
 
+
+
 Future<void> fetchUserPoints() async {
-    try {
-      final userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(FirebaseAuth.instance.currentUser!.uid);
-      final snapshot = await userDoc.get();
-      if (snapshot.exists) {
-        setState(() {
-          userPoints = snapshot['points'] ?? 0; // Get points or default to 0
-        });
-      }
-    } catch (e) {
-      print("Error fetching points: $e");
+  try {
+    final userDoc = FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid);
+    final snapshot = await userDoc.get();
+    if (snapshot.exists) {
+      setState(() {
+        userPoints = snapshot.data()?['points'] ?? 0;
+
+        exerciseDaily = snapshot.data()?['exerciseDaily'] ?? 0;
+        exerciseMonthly = snapshot.data()?['exerciseMonthly'] ?? 0;
+        exerciseYearly = snapshot.data()?['exerciseYearly'] ?? 0;
+
+        studyDaily = snapshot.data()?['studyDaily'] ?? 0;
+        studyMonthly = snapshot.data()?['studyMonthly'] ?? 0;
+        studyYearly = snapshot.data()?['studyYearly'] ?? 0;
+
+        meditateDaily = snapshot.data()?['meditateDaily'] ?? 0;
+        meditateMonthly = snapshot.data()?['meditateMonthly'] ?? 0;
+        meditateYearly = snapshot.data()?['meditateYearly'] ?? 0;
+      });
     }
+  } catch (e) {
+    print("Error fetching points: $e");
   }
+}
+
 
   void chooseMultiplier(int index) {
   showDialog(

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firebase_project/pages/component/chart.dart';
-import 'package:flutter_firebase_project/pages/task_page.dart';
 import 'package:flutter/cupertino.dart';
 
 class Dashboard extends StatefulWidget {
@@ -14,13 +13,16 @@ class Dashboard extends StatefulWidget {
 
 class _DashboardState extends State<Dashboard> {
   final _auth = FirebaseAuth.instance;
+  String selectedFilter = 'Daily'; // Default filter
+
+  // Available filter options
+  final List<String> filters = ['Daily', 'Monthly', 'Yearly'];
 
   @override
   Widget build(BuildContext context) {
     final user = _auth.currentUser!;
 
     return Scaffold(
-      
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -32,20 +34,55 @@ class _DashboardState extends State<Dashboard> {
           }
 
           final userDoc = snapshot.data!;
-          final Map<String, int> taskScores = {
-            'Exercise': userDoc.get('exerciseScore') ?? 0,
-            'Study': userDoc.get('studyScore') ?? 0,
-            'Meditate': userDoc.get('meditateScore') ?? 0,
+
+          // Adjust the task scores based on the selected filter
+          final taskScores = {
+            'Exercise': _getScore(userDoc, 'exerciseScore', selectedFilter),
+            'Study': _getScore(userDoc, 'studyScore', selectedFilter),
+            'Meditate': _getScore(userDoc, 'meditateScore', selectedFilter),
           };
+
+          // Get the target Y value based on the selected filter
+          final targetY = _getTargetY(selectedFilter);
+
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Task Progress",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                // Row with Task Progress title and filter dropdown
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      "Task Progress",
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    // Filter Dropdown for Daily/Monthly/Yearly
+                    Row(
+                      children: [
+                        const Text("Filter: "),
+                        DropdownButton<String>(
+                          value: selectedFilter,
+                          icon: const Icon(Icons.filter_list),
+                          elevation: 16,
+                          style: const TextStyle(color: Colors.black),
+                          onChanged: (String? newValue) {
+                            setState(() {
+                              selectedFilter = newValue!;
+                            });
+                          },
+                          items: filters.map<DropdownMenuItem<String>>((String value) {
+                            return DropdownMenuItem<String>(
+                              value: value,
+                              child: Text(value),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 // Task Progress Cards
@@ -59,7 +96,12 @@ class _DashboardState extends State<Dashboard> {
                         const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final card = profileTaskProgressCards[index];
-                      final scores = taskScores.values.toList();
+                      final taskName = card.title;
+                      final score = taskScores[taskName] ?? 0;
+
+                      // Determine the color based on the task score
+                      final scoreColor = score < targetY ? Colors.red : Colors.green;
+
                       return Container(
                         width: 180,
                         decoration: BoxDecoration(
@@ -77,10 +119,12 @@ class _DashboardState extends State<Dashboard> {
                                 Text(card.title, textAlign: TextAlign.center),
                                 const SizedBox(height: 5),
                                 Text(
-                                  "${scores[index]}",
-                                  style: const TextStyle(
-                                      fontSize: 20,
-                                      fontWeight: FontWeight.bold),
+                                  "${score}",
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: scoreColor, // Apply the color here
+                                  ),
                                 ),
                               ],
                             ),
@@ -99,7 +143,10 @@ class _DashboardState extends State<Dashboard> {
                 // Line Chart Section
                 SizedBox(
                   height: 300,
-                  child: TaskProgressChart(taskScores: taskScores),
+                  child: TaskProgressChart(
+                    taskScores: taskScores,
+                    filter: selectedFilter,
+                  ),
                 ),
               ],
             ),
@@ -107,6 +154,34 @@ class _DashboardState extends State<Dashboard> {
         },
       ),
     );
+  }
+
+  // Helper function to get the score based on the selected filter
+  int _getScore(DocumentSnapshot userDoc, String taskName, String filter) {
+    // Map filters to firestore fields
+    Map<String, String> filterMapping = {
+      'Daily': '${taskName}Daily',
+      'Monthly': '${taskName}Monthly',
+      'Yearly': '${taskName}Yearly',
+    };
+
+    String field = filterMapping[filter] ?? '${taskName}Daily'; // Default to Daily
+
+    return userDoc.get(field) ?? 0;
+  }
+
+  // Helper function to get the target Y value based on the filter
+  int _getTargetY(String filter) {
+    switch (filter) {
+      case 'Daily':
+        return 2;
+      case 'Monthly':
+        return 50;
+      case 'Yearly':
+        return 500;
+      default:
+        return 2;
+    }
   }
 }
 
