@@ -1,5 +1,6 @@
 // ignore_for_file: use_super_parameters, prefer_const_constructors, prefer_const_literals_to_create_immutables, use_build_context_synchronously
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/auth/forgot_pw_page.dart';
@@ -25,9 +26,7 @@ class _LoginPageState extends State<LoginPage> {
   // Show loading circle
   showDialog(
     context: context,
-    builder: (context) => Center(
-      child: CircularProgressIndicator()
-    ),
+    builder: (context) => Center(child: CircularProgressIndicator()),
   );
 
   try {
@@ -36,21 +35,45 @@ class _LoginPageState extends State<LoginPage> {
       email: _emailController.text.trim(),
       password: _passwordController.text.trim(),
     );
-    
+
+    final user = FirebaseAuth.instance.currentUser!;
+    DocumentReference userDocRef = FirebaseFirestore.instance.collection('users').doc(user.uid);
+
+    // Perform Firestore transaction
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userDocRef);
+
+      DateTime lastResetDate = snapshot.get('lastResetDate')?.toDate() ?? DateTime(2000, 1, 1);
+      DateTime currentDate = DateTime.now();
+
+      if (currentDate.year != lastResetDate.year || currentDate.month != lastResetDate.month || currentDate.day != lastResetDate.day) {
+        // Reset daily scores
+        transaction.update(userDocRef, {
+          'exerciseScoreDaily': 0,
+          'studyScoreDaily': 0,
+          'meditateScoreDaily': 0,
+          'lastResetDate': currentDate,
+        });
+      }
+    });
+
     // Pop the loading circle if login is successful
     if (mounted) Navigator.pop(context);
-    
+
   } on FirebaseAuthException catch (e) {
     // Pop the loading circle before showing the error message
     if (mounted) Navigator.pop(context);
-    
+
+    // Handle specific Firebase errors
     if (e.code == 'invalid-email') {
       displayMessage('The email address is not valid.');
+    } else {
+      displayMessage('Login failed: ${e.message}');
     }
-
-    else {
-      displayMessage('Login failed');
-    }
+  } catch (e) {
+    // Catch any other error
+    if (mounted) Navigator.pop(context);
+    displayMessage('An error occurred: $e');
   }
 }
 
@@ -73,7 +96,6 @@ class _LoginPageState extends State<LoginPage> {
       },
     );
   }
-
 
   @override
   void dispose() {

@@ -50,7 +50,6 @@ class _TaskPage extends State<TaskPage> {
     .doc(FirebaseAuth.instance.currentUser!.uid);
 
   DateTime now = DateTime.now();
-  String currentDate = "${now.year}-${now.month}-${now.day}";
   int currentMonth = now.month;
   int currentYear = now.year;
 
@@ -59,29 +58,18 @@ class _TaskPage extends State<TaskPage> {
     if (!snapshot.exists) {
       throw Exception("User document does not exist");
     }
-    final taskScore = snapshot[taskName] ?? 0;
 
     // Get the current values for the task
     var taskDaily = snapshot.data()?[taskName + 'Daily'] ?? 0;
     var taskMonthly = snapshot.data()?[taskName + 'Monthly'] ?? 0;
     var taskYearly = snapshot.data()?[taskName + 'Yearly'] ?? 0;
-    var taskDate = snapshot.data()?[taskName + 'Date'] ?? '';
     var taskMonth = snapshot.data()?[taskName + 'Month'] ?? 0;
     var taskYear = snapshot.data()?[taskName + 'Year'] ?? 0;
 
-    // Check and update daily points
-    if (taskDate == currentDate) {
-      // If the date is the same, just add to the daily score
-      transaction.update(userDoc, {
-        '$taskName' + 'Daily': taskDaily + pointsToAdd,
-      });
-    } else {
-      // Reset the daily points if it's a new day
-      transaction.update(userDoc, {
-        '$taskName' + 'Daily': pointsToAdd,
-        '$taskName' + 'Date': currentDate,
-      });
-    }
+    // Keep the current daily points and just add new points
+    transaction.update(userDoc, {
+      '$taskName' + 'Daily': taskDaily + pointsToAdd,
+    });
 
     // Check and update monthly points
     if (taskMonth == currentMonth) {
@@ -118,11 +106,10 @@ class _TaskPage extends State<TaskPage> {
     // Update the total points field in Firestore
     transaction.update(userDoc, {
       'points': updatedUserPoints,
-      taskName: taskScore + pointsToAdd,
+      taskName: (snapshot.data()?['$taskName'] ?? 0) + pointsToAdd,
     });
   });
 }
-
 
 
 Future<void> fetchUserPoints() async {
