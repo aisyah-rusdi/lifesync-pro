@@ -10,6 +10,7 @@ import 'package:image_picker/image_picker.dart'; // For image picking
 import 'component/exercise_achievement.dart';
 import 'component/study_achievement.dart';
 import 'component/meditate_achievement.dart';
+import 'component/balance_achievement.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -21,6 +22,10 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Uint8List? _image; // Decode image data
   String? _encodedImage; // Base64-encoded string
+  Color exerciseColor = Colors.grey;
+  Color studyColor = Colors.grey;
+  Color meditateColor = Colors.grey;
+  Color balanceColor = Colors.grey;
 
   void selectImage() async {
     final ImagePicker picker = ImagePicker();
@@ -87,8 +92,221 @@ class _ProfilePageState extends State<ProfilePage> {
   List<Map<String, dynamic>> achievements = [
     {"icon": Icons.directions_run},
     {"icon": CupertinoIcons.book_fill},
-    {"icon": Icons.self_improvement}
+    {"icon": Icons.self_improvement},
+    {"icon": Icons.balance}
   ];
+
+  List<Map<String, dynamic>> exercise_achievements = [
+    {
+      "name": "100 times exercises",
+      "condition": "exercise",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times exercises",
+      "condition": "exercise",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times exercises",
+      "condition": "exercise",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times exercises",
+      "condition": "exercise",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> study_achievements = [
+    {
+      "name": "100 times study",
+      "condition": "study",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times study",
+      "condition": "study",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times study",
+      "condition": "study",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times study",
+      "condition": "study",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> meditate_achievements = [
+    {
+      "name": "100 times meditation",
+      "condition": "meditate",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times meditation",
+      "condition": "meditate",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times meditation",
+      "condition": "meditate",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times meditation",
+      "condition": "meditate",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> balance_achievements = [
+    {
+      "name": "1 x exercise, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 1,
+      "target2": 1,
+      "target3": 1,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "100 x exercises, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 100,
+      "target2": 100,
+      "target3": 100,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.lightBlue[300],
+      "unlocked": false,
+    },
+    {
+      "name": "250 x exercises, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 250,
+      "target2": 250,
+      "target3": 250,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.orangeAccent,
+      "unlocked": false,
+    },
+    {
+      "name": "500 x exercise, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 500,
+      "target2": 500,
+      "target3": 500,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.redAccent,
+      "unlocked": false,
+    },
+  ];
+
+  void updateExerciseColor() {
+    // Find the highest unlocked achievement
+    for (var achievement in exercise_achievements.reversed) {
+      if (achievement['unlocked']) {
+        exerciseColor = achievement['color'];
+        return;
+      }
+    }
+    // Default to grey if no achievements are unlocked
+    exerciseColor = Colors.grey;
+  }
+
+  void updateStudyColor() {
+    // Find the highest unlocked achievement
+    for (var achievement in study_achievements.reversed) {
+      if (achievement['unlocked']) {
+        studyColor = achievement['color'];
+        return;
+      }
+    }
+    // Default to grey if no achievements are unlocked
+    studyColor = Colors.grey;
+  }
+
+  void updateMeditateColor() {
+    // Find the highest unlocked achievement
+    for (var achievement in meditate_achievements.reversed) {
+      if (achievement['unlocked']) {
+        meditateColor = achievement['color'];
+        return;
+      }
+    }
+    // Default to grey if no achievements are unlocked
+    meditateColor = Colors.grey;
+  }
+
+  void updateBalanceColor() {
+    // Find the highest unlocked achievement
+    for (var achievement in balance_achievements.reversed) {
+      if (achievement['unlocked']) {
+        balanceColor = achievement['color'];
+        return;
+      }
+    }
+    // Default to grey if no achievements are unlocked
+    balanceColor = Colors.grey;
+  }
 
   @override
   void initState() {
@@ -123,6 +341,48 @@ class _ProfilePageState extends State<ProfilePage> {
             exerciseScore = userDoc.get('exerciseScore') ?? 0;
             studyScore = userDoc.get('studyScore') ?? 0;
             meditateScore = userDoc.get('meditateScore') ?? 0;
+
+            for (var achievement in exercise_achievements) {
+              String condition4 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition4}Score') ?? 0;
+              if (achievement['progress'] >= achievement['target']) {
+                achievement['unlocked'] = true;
+              }
+            }
+            updateExerciseColor();
+
+            for (var achievement in study_achievements) {
+              String condition5 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition5}Score') ?? 0;
+              if (achievement['progress'] >= achievement['target']) {
+                achievement['unlocked'] = true;
+              }
+            }
+            updateStudyColor();
+
+            for (var achievement in meditate_achievements) {
+              String condition6 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition6}Score') ?? 0;
+              if (achievement['progress'] >= achievement['target']) {
+                achievement['unlocked'] = true;
+              }
+            }
+            updateMeditateColor();
+
+            for (var achievement in balance_achievements) {
+              String condition1 = achievement['condition1'];
+              achievement['progress1'] = userDoc.get('${condition1}Score') ?? 0;
+              String condition2 = achievement['condition2'];
+              achievement['progress2'] = userDoc.get('${condition2}Score') ?? 0;
+              String condition3 = achievement['condition3'];
+              achievement['progress3'] = userDoc.get('${condition3}Score') ?? 0;
+              if (achievement['progress1'] >= achievement['target1'] &&
+                  achievement['progress2'] >= achievement['target2'] &&
+                  achievement['progress3'] >= achievement['target3']) {
+                achievement['unlocked'] = true;
+              }
+            }
+            updateBalanceColor();
           } else {
             name = "No data found";
           }
@@ -435,16 +695,15 @@ class _ProfilePageState extends State<ProfilePage> {
                       physics:
                           NeverScrollableScrollPhysics(), // Disable GridView's scroll
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
+                        crossAxisCount: 4,
                         crossAxisSpacing: 10, // Space between columns
                         mainAxisSpacing: 10, // Space between rows
                       ),
-                      itemCount: 3,
+                      itemCount: 4,
                       itemBuilder: (context, index) {
                         final achievement = achievements[index];
                         return GestureDetector(
                           onTap: () {
-                            // Show the bottom sheet when the exercise icon is tapped
                             if (achievement['icon'] == Icons.directions_run) {
                               showModalBottomSheet(
                                 context: context,
@@ -471,6 +730,14 @@ class _ProfilePageState extends State<ProfilePage> {
                                   return MeditateAchievements();
                                 },
                               );
+                            } else if (achievement['icon'] == Icons.balance) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return BalanceAchievements();
+                                },
+                              );
                             }
                           },
                           child: Container(
@@ -493,6 +760,18 @@ class _ProfilePageState extends State<ProfilePage> {
                                   Icon(
                                     achievement['icon'],
                                     size: 50,
+                                    color: achievement['icon'] == Icons.balance
+                                        ? balanceColor
+                                        : achievement['icon'] ==
+                                                CupertinoIcons.book_fill
+                                            ? studyColor
+                                            : achievement['icon'] ==
+                                                    Icons.self_improvement
+                                                ? meditateColor
+                                                : achievement['icon'] ==
+                                                        Icons.directions_run
+                                                    ? exerciseColor // Update exercise icon color
+                                                    : Colors.grey,
                                   ),
                                 ],
                               ),

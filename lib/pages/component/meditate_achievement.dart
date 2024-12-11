@@ -10,7 +10,6 @@ class MeditateAchievements extends StatefulWidget {
 class _MeditateAchievementsState extends State<MeditateAchievements> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  // Exercise Achievements list
   List<Map<String, dynamic>> meditate_achievements = [
     {
       "name": "100 times meditation",
@@ -103,7 +102,6 @@ class _MeditateAchievementsState extends State<MeditateAchievements> {
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Column(
-            // Exercise Trophy Icon
             children: [
               Icon(
                 Icons.self_improvement,
@@ -112,7 +110,7 @@ class _MeditateAchievementsState extends State<MeditateAchievements> {
               ),
               const SizedBox(height: 10),
               const Text(
-                "Exercise Achievements",
+                "Meditation Achievements",
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
