@@ -13,7 +13,7 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPage extends State<TaskPage> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _alarmSound = AudioPlayer();
   final AudioPlayer _focusSound = AudioPlayer();
 
   bool isMusicPlaying = true;
@@ -93,8 +93,6 @@ Future<void> fetchUserPoints() async {
     },
   );
 }
-
-
 
   void toggleMusic() {
     setState(() {
@@ -187,7 +185,7 @@ Future<void> fetchUserPoints() async {
         _focusSound.stop(); // Stop looping sound when time goal is reached
 
         // Play alarm sound
-        _audioPlayer.play(AssetSource('audio/alarm.mp3'));
+        _alarmSound.play(AssetSource('audio/alarm.mp3'));
 
         showDialog(
           context: context,
@@ -199,7 +197,7 @@ Future<void> fetchUserPoints() async {
             actions: [
               TextButton(
                 onPressed: () {
-                  _audioPlayer.stop(); // Stop the alarm
+                  _alarmSound.stop(); // Stop the alarm
                   Navigator.of(context).pop();
                 },
                 child: const Text('OK'),
@@ -234,9 +232,6 @@ Future<void> fetchUserPoints() async {
     });
   });
 }
-
-
-  void settingsOpened(int index) {}
 
   @override
   Widget build(BuildContext context) {

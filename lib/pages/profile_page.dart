@@ -7,6 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'package:image_picker/image_picker.dart'; // For image picking
+import 'component/exercise_achievement.dart';
+import 'component/study_achievement.dart';
+import 'component/meditate_achievement.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -81,6 +84,12 @@ class _ProfilePageState extends State<ProfilePage> {
   String height = "";
   bool isLoading = true;
 
+  List<Map<String, dynamic>> achievements = [
+    {"icon": Icons.directions_run},
+    {"icon": CupertinoIcons.book_fill},
+    {"icon": Icons.self_improvement}
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -149,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
               TextField(
                 controller: firstNameController,
                 keyboardType: TextInputType.text,
-                inputFormatters: [LengthLimitingTextInputFormatter(10)],
+                maxLength: 10,
                 decoration:
                     const InputDecoration(hintText: "Enter new First Name"),
               ),
@@ -158,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
               TextField(
                 controller: lastNameController,
                 keyboardType: TextInputType.text,
-                inputFormatters: [LengthLimitingTextInputFormatter(20)],
+                maxLength: 10,
                 decoration:
                     const InputDecoration(hintText: "Enter new Last Name"),
               ),
@@ -178,7 +187,10 @@ class _ProfilePageState extends State<ProfilePage> {
                 String newLastName = lastNameController.text.trim();
 
                 // Ensure both fields are not empty
-                if (newFirstName.isNotEmpty && newLastName.isNotEmpty) {
+                if (newFirstName.isNotEmpty &&
+                    newLastName.isNotEmpty &&
+                    newFirstName.length <= 10 &&
+                    newLastName.length <= 10) {
                   try {
                     // Update Firebase with the new first and last names
                     await FirebaseFirestore.instance
@@ -201,6 +213,11 @@ class _ProfilePageState extends State<ProfilePage> {
                   } catch (e) {
                     print('Error updating name: $e');
                   }
+                } else {
+                  // Show an error if th input is invalid
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                      content: Text(
+                          'Names must be non-empty and under 10 characters.')));
                 }
               },
               child: const Text('Save'),
@@ -237,6 +254,28 @@ class _ProfilePageState extends State<ProfilePage> {
                 String newValue = controller.text;
                 if (newValue.isNotEmpty) {
                   try {
+                    // Convert newValue to number and validate based on field
+                    double value = double.tryParse(newValue) ?? 0;
+
+                    // Apply limits for each field
+                    if (field == 'height' && (value < 50 || value > 250)) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content:
+                              Text('Height must be between 50 cm and 250 cm')));
+                      return;
+                    } else if (field == 'weight' &&
+                        (value < 20 || value > 300)) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content:
+                              Text('Weight must be between 20 kg and 300 kg')));
+                      return;
+                    } else if (field == 'age' && (value < 1 || value > 120)) {
+                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                          content:
+                              Text('Age must be between 1 and 120 years')));
+                      return;
+                    }
+
                     // Update Firebase with the new value
                     await FirebaseFirestore.instance
                         .collection('users')
@@ -271,25 +310,23 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Profile"),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(
-                context); // This will take you back to the previous page
-          },
+        appBar: AppBar(
+          title: const Text("Profile"),
+          leading: IconButton(
+            icon: Icon(Icons.arrow_back),
+            onPressed: () {
+              Navigator.pop(
+                  context); // This will take you back to the previous page
+            },
+          ),
+          backgroundColor: const Color.fromARGB(255, 139, 190, 228),
+          foregroundColor: Colors.black,
+          elevation: 0,
         ),
-        backgroundColor: const Color.fromARGB(255, 139, 190, 228),
-        foregroundColor: Colors.black,
-        elevation: 0,
-      ),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView(
-                children: [
+        body: SingleChildScrollView(
+            child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(children: [
                   Center(
                     child: Column(
                       children: [
@@ -334,11 +371,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    "Personal Info",
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Personal Info',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 10),
                   // Display the profile info
@@ -369,13 +412,97 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                     );
-                  }
+                  }),
+
+                  // Achievement Board
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Achievements',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-        
-            )
-        ),   
-    );
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 20),
+                    child: GridView.builder(
+                      shrinkWrap: true, // Makes the GridView's height bounded
+                      physics:
+                          NeverScrollableScrollPhysics(), // Disable GridView's scroll
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 3,
+                        crossAxisSpacing: 10, // Space between columns
+                        mainAxisSpacing: 10, // Space between rows
+                      ),
+                      itemCount: 3,
+                      itemBuilder: (context, index) {
+                        final achievement = achievements[index];
+                        return GestureDetector(
+                          onTap: () {
+                            // Show the bottom sheet when the exercise icon is tapped
+                            if (achievement['icon'] == Icons.directions_run) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return ExerciseAchievements();
+                                },
+                              );
+                            } else if (achievement['icon'] ==
+                                CupertinoIcons.book_fill) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return StudyAchievements();
+                                },
+                              );
+                            } else if (achievement['icon'] ==
+                                Icons.self_improvement) {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                builder: (context) {
+                                  return MeditateAchievements();
+                                },
+                              );
+                            }
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 5,
+                                  offset: Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    achievement['icon'],
+                                    size: 50,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  )
+                ]))));
   }
 }
 

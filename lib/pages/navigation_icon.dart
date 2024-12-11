@@ -12,6 +12,8 @@ import 'package:flutter_firebase_project/pages/store_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'dart:typed_data';
 
+import 'package:flutter_firebase_project/pages/task_page.dart';
+
 class HomePage extends StatefulWidget{
   const HomePage({Key ? key}) : super(key : key);
 
@@ -157,18 +159,59 @@ void initState() {
 
         body: _pages[_selectedIndex],
         
+      floatingActionButton: SizedBox(
+          width: 100,
+          height: 100,
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 30.0),
+            child: FloatingActionButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const TaskPage()),
+                );
+              },
+              child: Icon(Icons.play_arrow, size: 50, color: Colors.white),
+              backgroundColor: Color.fromARGB(255, 254, 118, 108),
+              elevation: 12, // Adds a shadow for depth
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(40), // Rounded FAB
+              ),
+            ),
+          ),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+              
         bottomNavigationBar: BottomNavigationBar(
           currentIndex: _selectedIndex,
           onTap: _navigateBottomBar,
-          type: BottomNavigationBarType.fixed,
-          items:[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label:'Home'),
-            //BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
-            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
-            BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label:'Store'),
+          type: BottomNavigationBarType.fixed, // Ensures equal spacing
+          backgroundColor: Colors.white, // Background color for contrast
+          selectedItemColor: Color.fromARGB(255, 254, 118, 108), // Active item color
+          unselectedItemColor: Colors.grey, // Inactive item color
+          showSelectedLabels: true,
+          showUnselectedLabels: false,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home),
+              label: 'Home',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.add),
+              label: 'To-Do',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.leaderboard),
+              label: 'Leaderboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag),
+              label: 'Store',
+            ),
           ],
         ),
+
       );
     }
   }

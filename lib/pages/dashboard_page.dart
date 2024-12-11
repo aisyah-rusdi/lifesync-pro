@@ -20,23 +20,7 @@ class _DashboardState extends State<Dashboard> {
     final user = _auth.currentUser!;
 
     return Scaffold(
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        width: 100,
-        height: 100,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TaskPage()),
-            );
-          },
-          child: const Icon(Icons.play_arrow, size: 60),
-          backgroundColor: const Color.fromARGB(255, 254, 118, 108),
-          shape: const CircleBorder(),
-          elevation: 10,
-        ),
-      ),
+      
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection('users')
@@ -71,7 +55,8 @@ class _DashboardState extends State<Dashboard> {
                     physics: const BouncingScrollPhysics(),
                     scrollDirection: Axis.horizontal,
                     itemCount: profileTaskProgressCards.length,
-                    separatorBuilder: (context, index) => const SizedBox(width: 10),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
                     itemBuilder: (context, index) {
                       final card = profileTaskProgressCards[index];
                       final scores = taskScores.values.toList();
@@ -94,7 +79,8 @@ class _DashboardState extends State<Dashboard> {
                                 Text(
                                   "${scores[index]}",
                                   style: const TextStyle(
-                                      fontSize: 20, fontWeight: FontWeight.bold),
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -135,14 +121,14 @@ class ProfileTaskProgressCard {
 const profileTaskProgressCards = [
   ProfileTaskProgressCard(
     title: "Exercise",
-    icon: CupertinoIcons.sportscourt,
+    icon: Icons.directions_run,
   ),
   ProfileTaskProgressCard(
     title: "Study",
-    icon: CupertinoIcons.book,
+    icon: CupertinoIcons.book_fill,
   ),
   ProfileTaskProgressCard(
     title: "Meditate",
-    icon: CupertinoIcons.home,
+    icon: Icons.self_improvement,
   ),
 ];

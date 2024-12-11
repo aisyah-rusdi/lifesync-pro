@@ -24,15 +24,15 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Future<void> fetchCurrentUser() async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      setState(() {
-        currentUserId = user.uid;
-      });
-    }
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null && mounted) { // Check if mounted
+    setState(() {
+      currentUserId = user.uid;
+    });
   }
+}
 
-  Future<void> fetchLeaderboardData() async {
+Future<void> fetchLeaderboardData() async {
   setState(() {
     isLoading = true;
   });
@@ -58,19 +58,22 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       (user) => user['id'] == currentUserId,
     );
 
-    setState(() {
-      leaderboard = fetchedLeaderboard;
-      currentUserRank = rank == -1 ? null : rank + 1; // Adjust for 0-based index
-      isLoading = false;
-    });
+    if (mounted) { // Check if mounted
+      setState(() {
+        leaderboard = fetchedLeaderboard;
+        currentUserRank = rank == -1 ? null : rank + 1; // Adjust for 0-based index
+        isLoading = false;
+      });
+    }
   } catch (e) {
     print("Error fetching leaderboard data: $e");
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) { // Check if mounted
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
-
 
   void updateFilter(String filter) {
     setState(() {

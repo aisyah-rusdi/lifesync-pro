@@ -26,185 +26,187 @@ class _ToDoListPageState extends State<ToDoListPage> {
   }
 
   Future<void> _fetchToDoList() async {
-    if (_currentUser != null) {
-      final snapshot = await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .get();
+  if (_currentUser != null) {
+    final snapshot = await _firestore
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('todos')
+        .orderBy('dateTime')
+        .get();
+
+    if (mounted) { // Check if widget is still in the tree
       setState(() {
         _toDoList = snapshot.docs.map((doc) {
           final data = doc.data();
           return {
             "id": doc.id,
             "taskName": data['taskName'] ?? 'Unnamed Task',
-            "date": data['date'],
-            "time": data['time'],
+            "dateTime": (data['dateTime'] as Timestamp).toDate(),
             "completed": data['completed'] ?? false,
           };
         }).toList();
       });
     }
   }
+}
 
-  Future<void> _addTask(String taskName, String date, String time) async {
-    if (_currentUser != null && taskName.isNotEmpty) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .add({
-        'taskName': taskName,
-        'date': date,
-        'time': time,
-        'completed': false,
-      });
+Future<void> _addTask(String taskName, String? dateTime) async {
+  if (_currentUser != null && taskName.isNotEmpty && dateTime != null) {
+    await _firestore
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('todos')
+        .add({
+      'taskName': taskName,
+      'dateTime': Timestamp.fromDate(DateTime.parse(dateTime)),
+      'completed': false,
+    });
+    if (mounted) { // Check if widget is still in the tree
       _fetchToDoList();
     }
   }
+}
 
-  Future<void> _editTask(
-      String taskId, String taskName, String date, String time) async {
-    if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .update({
-        'taskName': taskName,
-        'date': date,
-        'time': time,
-      });
+Future<void> _toggleTaskCompletion(String taskId, bool isCompleted) async {
+  if (_currentUser != null) {
+    await _firestore
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('todos')
+        .doc(taskId)
+        .update({'completed': !isCompleted});
+    if (mounted) { // Check if widget is still in the tree
       _fetchToDoList();
     }
   }
+}
 
-  Future<void> _toggleTaskCompletion(String taskId, bool isCompleted) async {
-    if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .update({'completed': !isCompleted});
+Future<void> _deleteTask(String taskId) async {
+  if (_currentUser != null) {
+    await _firestore
+        .collection('users')
+        .doc(_currentUser!.uid)
+        .collection('todos')
+        .doc(taskId)
+        .delete();
+    if (mounted) { // Check if widget is still in the tree
       _fetchToDoList();
     }
   }
+}
 
-  Future<void> _deleteTask(String taskId) async {
-    if (_currentUser != null) {
-      await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .collection('todos')
-          .doc(taskId)
-          .delete();
-      _fetchToDoList();
-    }
-  }
 
   void _showAddTaskDialog() {
     final taskController = TextEditingController();
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
+    final yearController = TextEditingController();
+    final monthController = TextEditingController();
+    final dayController = TextEditingController();
+    final hourController = TextEditingController();
+    final minuteController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text("Add New Task"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: taskController,
-              decoration: InputDecoration(
-                hintText: "Enter task name",
-                border: OutlineInputBorder(),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: taskController,
+                decoration: InputDecoration(
+                  hintText: "Enter task name",
+                  border: OutlineInputBorder(),
+                ),
               ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: dateController,
-              decoration: InputDecoration(
-                hintText: "Enter date (YYYY-MM-DD)",
-                border: OutlineInputBorder(),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: yearController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "Year",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: TextField(
+                      controller: monthController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "Month",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: TextField(
+                      controller: dayController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "Day",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: timeController,
-              decoration: InputDecoration(
-                hintText: "Enter time (HH:MM)",
-                border: OutlineInputBorder(),
+              SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: hourController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "Hour (0-23)",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 5),
+                  Expanded(
+                    child: TextField(
+                      controller: minuteController,
+                      keyboardType: TextInputType.number,
+                      decoration: InputDecoration(
+                        hintText: "Minute (0-59)",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () {
-              _addTask(taskController.text.trim(), dateController.text.trim(),
-                  timeController.text.trim());
-              Navigator.of(context).pop();
+              try {
+                final int year = int.parse(yearController.text.trim());
+                final int month = int.parse(monthController.text.trim());
+                final int day = int.parse(dayController.text.trim());
+                final int hour = int.parse(hourController.text.trim());
+                final int minute = int.parse(minuteController.text.trim());
+
+                final dateTime =
+                    DateTime(year, month, day, hour, minute).toString();
+                _addTask(taskController.text.trim(), dateTime);
+
+                Navigator.of(context).pop();
+              } catch (e) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text("Error: ${e.toString()}")),
+                );
+              }
             },
             child: Text("Add"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showEditTaskDialog(String taskId, String currentTaskName,
-      String? currentDate, String? currentTime) {
-    final taskController = TextEditingController(text: currentTaskName);
-    final dateController = TextEditingController(text: currentDate ?? "");
-    final timeController = TextEditingController(text: currentTime ?? "");
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Edit Task"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: taskController,
-              decoration: InputDecoration(
-                hintText: "Enter task name",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: dateController,
-              decoration: InputDecoration(
-                hintText: "Enter date (YYYY-MM-DD)",
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SizedBox(height: 10),
-            TextField(
-              controller: timeController,
-              decoration: InputDecoration(
-                hintText: "Enter time (HH:MM)",
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              _editTask(taskId, taskController.text.trim(),
-                  dateController.text.trim(), timeController.text.trim());
-              Navigator.of(context).pop();
-            },
-            child: Text("Save"),
           ),
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -224,9 +226,6 @@ class _ToDoListPageState extends State<ToDoListPage> {
             Container(
               width: double.infinity,
               padding: EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -248,7 +247,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
                   ),
                   SizedBox(height: 10),
                   SizedBox(
-                    height: 700,
+                    height: 500,
                     child: ListView.builder(
                       itemCount: _toDoList.length,
                       itemBuilder: (context, index) {
@@ -256,15 +255,17 @@ class _ToDoListPageState extends State<ToDoListPage> {
                         return TodoBox(
                           taskName: task['taskName'],
                           taskCompleted: task['completed'],
-                          onChanged: (value) => _toggleTaskCompletion(
-                              task['id'], task['completed']),
-                          deleteFunction: (context) => _deleteTask(task['id']),
-                          editFunction: (context) => _showEditTaskDialog(
-                            task['id'],
-                            task['taskName'],
-                            task['date'],
-                            task['time'],
-                          ),
+                          taskDateTime: task['dateTime'],
+                          onChanged: (value) {
+                            _toggleTaskCompletion(
+                                task['id'], task['completed']);
+                          },
+                          deleteFunction: () {
+                            _deleteTask(task['id']);
+                          },
+                          editFunction: () {
+                            _showAddTaskDialog();
+                          },
                         );
                       },
                     ),

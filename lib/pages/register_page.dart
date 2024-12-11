@@ -88,7 +88,7 @@ class _RegisterPageState extends State<RegisterPage> {
         }
       }
     } else {
-      showAlertDialog("Passwords do not match. Please try again.");
+      showAlertDialog("Register failed. Please try again.");
     }
   }
 
