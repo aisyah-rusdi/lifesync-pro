@@ -19,24 +19,15 @@ class PaymentPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Total Price: \$${totalPriceInCents / 100}',
+              'Total Price: \RM${totalPriceInCents / 100}',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 30),
             Text('Select Payment Method:', style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
             PaymentOptionButton(
-              icon: Icons.credit_card,
-              label: 'Credit Card',
-              onPressed: () {
-                // Payment logic for Credit Card
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Payment successful with Credit Card!')));
-              },
-            ),
-            PaymentOptionButton(
               icon: Icons.money,
-              label: 'Online Banking',
+              label: 'Duitnow QR',
               onPressed: () {
                 // Payment logic for Online Banking
                 ScaffoldMessenger.of(context).showSnackBar(SnackBar(

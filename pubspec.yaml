@@ -46,6 +46,7 @@ dependencies:
   path_provider: ^2.0.11
   http: ^1.1.0
   image_picker: ^0.8.7
+  qr_flutter: ^4.0.0
 
 dev_dependencies:
   flutter_test:
@@ -84,7 +85,6 @@ flutter:
     - assets/images/handgrip.png
     - assets/images/shaver.png
     - assets/images/track.png
-
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 
