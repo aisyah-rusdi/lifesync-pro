@@ -85,6 +85,8 @@ flutter:
     - assets/images/handgrip.png
     - assets/images/shaver.png
     - assets/images/track.png
+    - assets/images/duitnow.jpg
+    - assets/images/tng.jpg
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
 

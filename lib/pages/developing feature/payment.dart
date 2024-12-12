@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'duitnow.dart';
+import 'tng.dart';
 
 class PaymentPage extends StatelessWidget {
   final int totalPriceInCents;
@@ -32,8 +34,7 @@ class PaymentPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QRCodePage(
-                      paymentMethod: 'Duitnow QR',
+                    builder: (context) => DuitnowQRPage(
                       totalPrice: totalPriceInCents / 100,
                     ),
                   ),
@@ -47,8 +48,7 @@ class PaymentPage extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => QRCodePage(
-                      paymentMethod: 'Touch n Go',
+                    builder: (context) => TouchNGoQRPage(
                       totalPrice: totalPriceInCents / 100,
                     ),
                   ),
@@ -84,83 +84,6 @@ class PaymentOptionButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
           textStyle: TextStyle(fontSize: 18),
-        ),
-      ),
-    );
-  }
-}
-
-class QRCodePage extends StatelessWidget {
-  final String paymentMethod;
-  final double totalPrice;
-
-  QRCodePage({required this.paymentMethod, required this.totalPrice});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('$paymentMethod QR Code'),
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Total Price: RM${totalPrice.toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              textAlign: TextAlign.center,
-            ),
-            SizedBox(height: 30),
-            Image.asset(
-              'assets/${paymentMethod.toLowerCase().replaceAll(" ", "_")}_qr.png',
-              height: 200,
-              width: 200,
-            ), // Replace with your QR code images
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Payment Confirmation'),
-                      content: Text('Have you completed the payment?'),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                          child: Text('Cancel'),
-                        ),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    'You have successfully paid. Thank you!'),
-                              ),
-                            );
-                          },
-                          child: Text('Yes'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: Text('I have paid'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
-                textStyle: TextStyle(fontSize: 18),
-              ),
-            ),
-          ],
         ),
       ),
     );
