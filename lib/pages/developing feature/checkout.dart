@@ -13,16 +13,18 @@ class CheckoutPage extends StatefulWidget {
 
 class _CheckoutPageState extends State<CheckoutPage> {
   late int remainingPoints;
+  late List<Map<String, dynamic>> cartItems;
 
   @override
   void initState() {
     super.initState();
     // Initialize remainingPoints with the user's initial points
     remainingPoints = widget.userPoints;
+    cartItems = widget.cartItems;
   }
 
   void purchaseWithPoints() async {
-    int totalPoints = widget.cartItems.fold<int>(
+    int totalPoints = cartItems.fold<int>(
       0,
       (sum, item) => sum + (item['cost'] as int),
     );
@@ -44,14 +46,26 @@ class _CheckoutPageState extends State<CheckoutPage> {
     }
   }
 
+  void addItem(Map<String, dynamic> item) {
+    setState(() {
+      cartItems.add(item);
+    });
+  }
+
+  void removeItem(int index) {
+    setState(() {
+      cartItems.removeAt(index);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // Calculate total points and total price in cents
-    int totalPoints = widget.cartItems.fold<int>(
+    int totalPoints = cartItems.fold<int>(
       0,
       (sum, item) => sum + (item['cost'] as int),
     );
-    int totalPriceInCents = widget.cartItems.fold<int>(
+    int totalPriceInCents = cartItems.fold<int>(
       0,
       (sum, item) => sum + (item['priceInCents'] as int),
     );
@@ -65,13 +79,30 @@ class _CheckoutPageState extends State<CheckoutPage> {
         children: [
           Expanded(
             child: ListView.builder(
-              itemCount: widget.cartItems.length,
+              itemCount: cartItems.length,
               itemBuilder: (context, index) {
-                final item = widget.cartItems[index];
+                final item = cartItems[index];
                 return ListTile(
                   title: Text(item['itemName']),
                   subtitle: Text(
                       '${item['cost']} points or \RM${item['priceInCents'] / 100}'),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.add),
+                        onPressed: () {
+                          addItem(item);
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.remove),
+                        onPressed: () {
+                          removeItem(index);
+                        },
+                      ),
+                    ],
+                  ),
                 );
               },
             ),
