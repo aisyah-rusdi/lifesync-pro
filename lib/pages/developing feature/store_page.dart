@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'checkout.dart'; // Import the updated CheckoutPage
+import 'checkout.dart'; // Import the CheckoutPage
 
 class StorePage extends StatefulWidget {
   const StorePage({Key? key}) : super(key: key);
@@ -14,7 +14,7 @@ class _StorePageState extends State<StorePage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  int userPoints = 10;
+  int userPoints = 0;
   List<Map<String, dynamic>> cartItems = []; // To store cart items
 
   @override
@@ -30,7 +30,8 @@ class _StorePageState extends State<StorePage> {
       userDoc.snapshots().listen((snapshot) {
         if (snapshot.exists) {
           setState(() {
-            userPoints = snapshot['points'] ?? 0; // Default to 0 if missing
+            userPoints = snapshot['points'] ??
+                0; // Default to 0 if points field is missing
           });
         }
       });
@@ -50,30 +51,6 @@ class _StorePageState extends State<StorePage> {
     );
   }
 
-  void _navigateToCheckout() async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => CheckoutPage(
-          cartItems: cartItems,
-          userPoints: userPoints,
-        ),
-      ),
-    );
-
-    // Update points if CheckoutPage returns new points value
-    if (result != null && result is int) {
-      setState(() {
-        userPoints = result; // Update user points after purchase
-      });
-    }
-
-    // Clear cart after returning from checkout
-    setState(() {
-      cartItems.clear();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,24 +58,40 @@ class _StorePageState extends State<StorePage> {
         title: Text('Store'),
         centerTitle: true,
         actions: [
+          // Star icon representing points
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              children: [
+                Icon(Icons.star, color: Colors.yellow), // Star icon
+                SizedBox(width: 4),
+                Text(
+                  userPoints.toString(),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          // Shopping cart icon
           IconButton(
             icon: Icon(Icons.shopping_cart),
-            onPressed: _navigateToCheckout,
+            onPressed: () {
+              // Navigate to the Checkout Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CheckoutPage(
+                    cartItems: cartItems,
+                    userPoints: userPoints,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          Container(
-            color: Colors.purple.shade100,
-            padding: EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                Text('TOTAL POINTS EARNED', style: TextStyle(fontSize: 18)),
-                Text(userPoints.toString(), style: TextStyle(fontSize: 36)),
-              ],
-            ),
-          ),
           Expanded(
             child: GridView.count(
               crossAxisCount: 2,
@@ -134,14 +127,16 @@ class _StorePageState extends State<StorePage> {
       elevation: 5,
       margin: EdgeInsets.all(8.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            height: 100,
-            width: 100,
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover,
+          Expanded(
+            // Ensures the image container takes a flexible space
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(imagePath),
+                  fit: BoxFit.cover, // Adjusts image to fit container
+                ),
               ),
             ),
           ),
@@ -151,11 +146,15 @@ class _StorePageState extends State<StorePage> {
                 textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
           ),
           Text('$cost points\nRM${priceInCents / 100}',
+              textAlign: TextAlign.center,
               style: TextStyle(
                   fontSize: 14, color: const Color.fromARGB(255, 5, 3, 5))),
-          ElevatedButton(
-            onPressed: () => _addToCart(itemName, cost, priceInCents),
-            child: Text('Add to Cart'),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              onPressed: () => _addToCart(itemName, cost, priceInCents),
+              child: Text('Add to Cart'),
+            ),
           ),
         ],
       ),

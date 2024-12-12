@@ -40,11 +40,12 @@ dependencies:
   cloud_firestore: ^5.4.4
   percent_indicator: ^4.2.3
   flutter_slidable: ^3.1.1
-  audioplayers: ^6.1.0
-  http: ^1.2.2              #ERN added ^^^^   
+  audioplayers: ^6.1.0 
   sqflite: ^2.0.0+4 # or the latest version
   path: ^1.8.0 # Ensure path is added for file management
   path_provider: ^2.0.11
+  http: ^1.1.0
+  image_picker: ^0.8.7
 
 dev_dependencies:
   flutter_test:
