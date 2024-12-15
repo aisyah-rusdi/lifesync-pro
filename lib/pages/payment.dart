@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'duitnow.dart';
+import 'tng.dart';
 
 class PaymentPage extends StatelessWidget {
   final int totalPriceInCents;
@@ -19,37 +21,38 @@ class PaymentPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Total Price: \$${totalPriceInCents / 100}',
+              'Total Price: RM${(totalPriceInCents / 100).toStringAsFixed(2)}',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 30),
             Text('Select Payment Method:', style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
             PaymentOptionButton(
-              icon: Icons.credit_card,
-              label: 'Credit Card',
-              onPressed: () {
-                // Payment logic for Credit Card
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Payment successful with Credit Card!')));
-              },
-            ),
-            PaymentOptionButton(
               icon: Icons.money,
-              label: 'Online Banking',
+              label: 'Duitnow QR',
               onPressed: () {
-                // Payment logic for Online Banking
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Payment successful with Online Banking!')));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => DuitnowQRPage(
+                      totalPrice: totalPriceInCents / 100,
+                    ),
+                  ),
+                );
               },
             ),
             PaymentOptionButton(
               icon: Icons.touch_app,
               label: 'Touch n Go',
               onPressed: () {
-                // Payment logic for Touch n Go
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                    content: Text('Payment successful with Touch n Go!')));
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TouchNGoQRPage(
+                      totalPrice: totalPriceInCents / 100,
+                    ),
+                  ),
+                );
               },
             ),
           ],
@@ -79,7 +82,6 @@ class PaymentOptionButton extends StatelessWidget {
         icon: Icon(icon),
         label: Text(label),
         style: ElevatedButton.styleFrom(
-          // Button color
           padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
           textStyle: TextStyle(fontSize: 18),
         ),

@@ -12,7 +12,7 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  final _auth = FirebaseAuth.instance;
+  final _auth = FirebaseAuth.instance; // fetching the current logged-in user
   String selectedFilter = 'Daily'; // Default filter
 
   // Available filter options
@@ -23,11 +23,11 @@ class _DashboardState extends State<Dashboard> {
     final user = _auth.currentUser!;
 
     return Scaffold(
-      body: StreamBuilder<DocumentSnapshot>(
+      body: StreamBuilder<DocumentSnapshot>( // Listens for real-time updates from Firestore.
         stream: FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
-            .snapshots(),
+            .snapshots(), // Continuously listens to changes in the document.
         builder: (context, snapshot) {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
@@ -59,31 +59,30 @@ class _DashboardState extends State<Dashboard> {
                       "Task Progress",
                       style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                     ),
-                    // Filter Dropdown for Daily/Monthly/Yearly
                     Row(
                       children: [
                         const Text("Filter: "),
-                        DropdownButton<String>(
-                          value: selectedFilter,
+                        PopupMenuButton<String>(
                           icon: const Icon(Icons.filter_list),
-                          elevation: 16,
-                          style: const TextStyle(color: Colors.black),
-                          onChanged: (String? newValue) {
+                          onSelected: (String newValue) {
                             setState(() {
-                              selectedFilter = newValue!;
+                              selectedFilter = newValue;
                             });
                           },
-                          items: filters.map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text(value),
-                            );
-                          }).toList(),
+                          itemBuilder: (BuildContext context) {
+                            return filters.map<PopupMenuEntry<String>>((String value) {
+                              return PopupMenuItem<String>(
+                                value: value,
+                                child: Text(value),
+                              );
+                            }).toList();
+                          },
                         ),
                       ],
                     ),
                   ],
                 ),
+
                 const SizedBox(height: 10),
                 // Task Progress Cards
                 SizedBox(
@@ -136,7 +135,7 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 const SizedBox(height: 20),
                 const Text(
-                  "Average Task Progress",
+                  "Visually Task Progress",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 10),

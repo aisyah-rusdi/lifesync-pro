@@ -55,42 +55,41 @@ class _StorePageState extends State<StorePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: Text('Store'),
-  centerTitle: true,
-  actions: [
-    // Star icon representing points
-    Padding(
-      padding: const EdgeInsets.only(right: 16.0),
-      child: Row(
-        children: [
-          Icon(Icons.star, color: Colors.yellow), // Star icon
-          SizedBox(width: 4),
-          Text(
-            userPoints.toString(),
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        title: Text('Store'),
+        centerTitle: true,
+        actions: [
+          // Star icon representing points
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Row(
+              children: [
+                Icon(Icons.star, color: Colors.yellow), // Star icon
+                SizedBox(width: 4),
+                Text(
+                  userPoints.toString(),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+          // Shopping cart icon
+          IconButton(
+            icon: Icon(Icons.shopping_cart),
+            onPressed: () {
+              // Navigate to the Checkout Page
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CheckoutPage(
+                    cartItems: cartItems,
+                    userPoints: userPoints,
+                  ),
+                ),
+              );
+            },
           ),
         ],
       ),
-    ),
-    // Shopping cart icon
-    IconButton(
-      icon: Icon(Icons.shopping_cart),
-      onPressed: () {
-        // Navigate to the Checkout Page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CheckoutPage(
-              cartItems: cartItems,
-              userPoints: userPoints,
-            ),
-          ),
-        );
-      },
-    ),
-  ],
-),
-
       body: Column(
         children: [
           Expanded(
@@ -123,42 +122,42 @@ class _StorePageState extends State<StorePage> {
   }
 
   Widget _buildStoreItem(
-    String itemName, int cost, String imagePath, int priceInCents) {
-  return Card(
-    elevation: 5,
-    margin: EdgeInsets.all(8.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Expanded(
-          // Ensures the image container takes a flexible space
-          child: Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage(imagePath),
-                fit: BoxFit.cover, // Adjusts image to fit container
+      String itemName, int cost, String imagePath, int priceInCents) {
+    return Card(
+      elevation: 5,
+      margin: EdgeInsets.all(8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            // Ensures the image container takes a flexible space
+            child: Container(
+              decoration: BoxDecoration(
+                image: DecorationImage(
+                  image: AssetImage(imagePath),
+                  fit: BoxFit.cover, // Adjusts image to fit container
+                ),
               ),
             ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Text(itemName,
-              textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
-        ),
-        Text('$cost points\nRM${priceInCents / 100}',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                fontSize: 14, color: const Color.fromARGB(255, 5, 3, 5))),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0),
-          child: ElevatedButton(
-            onPressed: () => _addToCart(itemName, cost, priceInCents),
-            child: Text('Add to Cart'),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Text(itemName,
+                textAlign: TextAlign.center, style: TextStyle(fontSize: 16)),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          Text('$cost points\nRM${priceInCents / 100}',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 14, color: const Color.fromARGB(255, 5, 3, 5))),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: ElevatedButton(
+              onPressed: () => _addToCart(itemName, cost, priceInCents),
+              child: Text('Add to Cart'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

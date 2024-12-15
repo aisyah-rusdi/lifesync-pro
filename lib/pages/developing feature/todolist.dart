@@ -26,15 +26,13 @@ class _ToDoListPageState extends State<ToDoListPage> {
   }
 
   Future<void> _fetchToDoList() async {
-  if (_currentUser != null) {
-    final snapshot = await _firestore
-        .collection('users')
-        .doc(_currentUser!.uid)
-        .collection('todos')
-        .orderBy('dateTime')
-        .get();
-
-    if (mounted) { // Check if widget is still in the tree
+    if (_currentUser != null) {
+      final snapshot = await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .orderBy('dateTime')
+          .get();
       setState(() {
         _toDoList = snapshot.docs.map((doc) {
           final data = doc.data();
@@ -48,53 +46,45 @@ class _ToDoListPageState extends State<ToDoListPage> {
       });
     }
   }
-}
 
-Future<void> _addTask(String taskName, String? dateTime) async {
-  if (_currentUser != null && taskName.isNotEmpty && dateTime != null) {
-    await _firestore
-        .collection('users')
-        .doc(_currentUser!.uid)
-        .collection('todos')
-        .add({
-      'taskName': taskName,
-      'dateTime': Timestamp.fromDate(DateTime.parse(dateTime)),
-      'completed': false,
-    });
-    if (mounted) { // Check if widget is still in the tree
+  Future<void> _addTask(String taskName, String? dateTime) async {
+    if (_currentUser != null && taskName.isNotEmpty && dateTime != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .add({
+        'taskName': taskName,
+        'dateTime': Timestamp.fromDate(DateTime.parse(dateTime)),
+        'completed': false,
+      });
       _fetchToDoList();
     }
   }
-}
 
-Future<void> _toggleTaskCompletion(String taskId, bool isCompleted) async {
-  if (_currentUser != null) {
-    await _firestore
-        .collection('users')
-        .doc(_currentUser!.uid)
-        .collection('todos')
-        .doc(taskId)
-        .update({'completed': !isCompleted});
-    if (mounted) { // Check if widget is still in the tree
+  Future<void> _toggleTaskCompletion(String taskId, bool isCompleted) async {
+    if (_currentUser != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .doc(taskId)
+          .update({'completed': !isCompleted});
       _fetchToDoList();
     }
   }
-}
 
-Future<void> _deleteTask(String taskId) async {
-  if (_currentUser != null) {
-    await _firestore
-        .collection('users')
-        .doc(_currentUser!.uid)
-        .collection('todos')
-        .doc(taskId)
-        .delete();
-    if (mounted) { // Check if widget is still in the tree
+  Future<void> _deleteTask(String taskId) async {
+    if (_currentUser != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .doc(taskId)
+          .delete();
       _fetchToDoList();
     }
   }
-}
-
 
   void _showAddTaskDialog() {
     final taskController = TextEditingController();
