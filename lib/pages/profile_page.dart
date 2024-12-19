@@ -7,7 +7,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'package:image_picker/image_picker.dart'; // For image picking
-import 'component/exercise_achievement.dart';
+import 'package:image/image.dart' as img; // Import the image package
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'component/exercise_achievement.dart'; // ABC
 import 'component/study_achievement.dart';
 import 'component/meditate_achievement.dart';
 import 'component/balance_achievement.dart';
@@ -22,7 +24,7 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   Uint8List? _image; // Decode image data
   String? _encodedImage; // Base64-encoded string
-  Color exerciseColor = Colors.grey;
+  Color exerciseColor = Colors.grey; // ABC
   Color studyColor = Colors.grey;
   Color meditateColor = Colors.grey;
   Color balanceColor = Colors.grey;
@@ -33,17 +35,45 @@ class _ProfilePageState extends State<ProfilePage> {
         await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedImage != null) {
-      Uint8List imageBytes = await pickedImage.readAsBytes();
-      String encodedImage = base64Encode(imageBytes);
+      // Call compressAndEncodeImage to compress and encode the image
+      String encodedImage = await compressAndEncodeImage(pickedImage);
 
       setState(() {
-        _image = imageBytes; // Display the image
-        _encodedImage = encodedImage;
+        _encodedImage = encodedImage; // Store the encoded image
+        _image = base64Decode(encodedImage); // Decode to display the image
       });
 
-      // Save the encoded image to Firestore
+      // Save the stripped and encoded image to Firestore
       await saveImageToFirestore(encodedImage);
     }
+  }
+
+  Future<String> compressAndEncodeImage(XFile pickedFile) async {
+    // Load the image file
+    Uint8List imageBytes = await pickedFile.readAsBytes();
+    img.Image? image = img.decodeImage(imageBytes);
+
+    if (image != null) {
+      // Remove EXIF data and re-encode the image to JPG
+      Uint8List strippedImageBytes = Uint8List.fromList(img.encodeJpg(image));
+
+      // If the size is still greater than 1MB, apply compression
+      if (strippedImageBytes.length > 1024 * 1024) {
+        final result = await FlutterImageCompress.compressWithList(
+          strippedImageBytes,
+          minWidth: 800,
+          minHeight: 600,
+          quality: 80, // Lower quality if needed to meet size requirements
+        );
+        strippedImageBytes = result!;
+      }
+
+      // Encode the compressed image into a base64 string
+      String base64Image = base64Encode(strippedImageBytes);
+
+      return base64Image;
+    }
+    return '';
   }
 
   Future<void> saveImageToFirestore(String encodedImage) async {
@@ -54,6 +84,9 @@ class _ProfilePageState extends State<ProfilePage> {
           .update({
         'profileImage': encodedImage,
       });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profile image updated successfully!')),
+      );
     } catch (e) {
       print("Error saving profile image: $e");
     }
@@ -77,6 +110,9 @@ class _ProfilePageState extends State<ProfilePage> {
       }
     } catch (e) {
       print("Error fetching profile image: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error fetching profile image: $e')),
+      );
     }
   }
 
@@ -709,7 +745,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                 context: context,
                                 isScrollControlled: true,
                                 builder: (context) {
-                                  return ExerciseAchievements();
+                                  return ExerciseAchievements(); // ABC
                                 },
                               );
                             } else if (achievement['icon'] ==
