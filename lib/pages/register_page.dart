@@ -213,7 +213,7 @@ class _RegisterPageState extends State<RegisterPage> {
         showAlertDialog(_getFirebaseErrorMessage(e));
       }
     } else {
-      showAlertDialog("Please ensure all fields are valid.");
+      showAlertDialog("Registration failed. Please ensure all fields are valid.");
     }
   }
 
@@ -231,8 +231,25 @@ class _RegisterPageState extends State<RegisterPage> {
       'height': height,
       'points': 0,
       'exerciseScore': 0,
+      'exerciseScoreDaily': 0,
+      'exerciseScoreMonthly': 0,
+      'exerciseScoreMonth': 0,
+      'exerciseScoreYearly': 0,
+      'exerciseScoreYear': 0,
+      'studyScoreDaily': 0,
+      'studyScoreMonthly': 0,
+      'studyScoreMonth': 0,
+      'studyScoreYearly': 0,
+      'studyScoreYear': 0,
       'studyScore': 0,
       'meditateScore': 0,
+      'meditateScoreDaily': 0,
+      'meditateScoreMonthly': 0,
+      'meditateScoreMonth': 0,
+      'meditateScoreYearly': 0,
+      'meditateScoreYear': 0,
+      'lastResetDate': Timestamp.fromDate(DateTime.now()),
+      'profileImage' : '',
     });
   }
 

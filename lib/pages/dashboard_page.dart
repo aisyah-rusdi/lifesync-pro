@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firebase_project/pages/component/chart.dart';
 import 'package:flutter_firebase_project/pages/task_page.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_firebase_project/pages/developing feature/todolist.dart';
 
 class Dashboard extends StatefulWidget {
   const Dashboard({Key? key}) : super(key: key);
@@ -59,6 +60,184 @@ class _DashboardState extends State<Dashboard> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Row for BMI and To-Do List
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // BMI Section
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Your BMI",
+                            style: TextStyle(
+                                fontSize: 20, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 10),
+                          FutureBuilder<DocumentSnapshot>(
+                            future: FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(user.uid)
+                                .get(),
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const Center(
+                                    child: CircularProgressIndicator());
+                              }
+                              final userDoc = snapshot.data!;
+                              final double height =
+                                  double.parse(userDoc.get('height') ?? 0.0)
+                                      .toDouble();
+                              final double weight =
+                                  double.parse(userDoc.get('weight') ?? 0.0)
+                                      .toDouble();
+                              double bmi = 0;
+                              if (height > 0 && weight > 0) {
+                                bmi =
+                                    weight / ((height / 100) * (height / 100));
+                              }
+
+                              // Determine the circle color based on BMI value
+                              Color circleColor;
+                              if (bmi > 0 && bmi < 18.5) {
+                                circleColor = Colors.yellow; // Underweight
+                              } else if (bmi > 18.4 && bmi < 25.0) {
+                                circleColor = Colors.green; // Normal
+                              } else if (bmi > 24.9 && bmi < 40.0) {
+                                circleColor = Colors.orange; // Overweight
+                              } else if (bmi > 39.9) {
+                                circleColor = Colors.red; // Obese
+                              } else {
+                                circleColor =
+                                    Colors.grey; // Default for invalid BMI
+                              }
+
+                              return Column(
+                                  mainAxisAlignment: MainAxisAlignment
+                                      .center, // Center the content vertically
+                                  crossAxisAlignment: CrossAxisAlignment
+                                      .center, // Center the content horizontally
+                                  children: [
+                                    Container(
+                                      width: 150,
+                                      height: 100,
+                                      decoration: BoxDecoration(
+                                        color: circleColor,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          bmi > 0
+                                              ? bmi.toStringAsFixed(1)
+                                              : "N/A",
+                                          style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ]);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    // To-Do List Section
+                    Expanded(
+                      flex: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const SizedBox(height: 10),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ToDoListPage()),
+                              );
+                            },
+                            child: Container(
+                              width: double
+                                  .infinity, // Makes the widget span the full width of its parent
+                              padding: const EdgeInsets.all(15),
+                              decoration: BoxDecoration(
+                                color: const Color.fromARGB(255, 114, 166, 255),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: StreamBuilder<
+                                  QuerySnapshot<Map<String, dynamic>>>(
+                                stream: FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(user.uid)
+                                    .collection('todos')
+                                    .snapshots(), // Use snapshots for real-time updates
+                                builder: (context, snapshot) {
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  }
+                                  final todos = snapshot.data!.docs
+                                      .map((doc) =>
+                                          doc.data()['taskName'] ??
+                                          'Unnamed Task')
+                                      .take(3)
+                                      .toList();
+
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        "To-Do List",
+                                        style: TextStyle(
+                                            fontSize: 18,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      ...todos.map((todo) => Text(
+                                            "- $todo",
+                                            style: const TextStyle(
+                                                fontSize: 14,
+                                                color: Colors.white70),
+                                          )),
+                                      if (snapshot.data!.docs.isEmpty)
+                                        const Text(
+                                          "Click here to add your todo list!",
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.white54),
+                                        )
+                                      else if (snapshot.data!.docs.length > 3)
+                                        const Text(
+                                          "+ more...",
+                                          style: TextStyle(
+                                              fontSize: 14,
+                                              color: Colors.white54),
+                                        ),
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Task Progress Section
                 const Text(
                   "Task Progress",
                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
