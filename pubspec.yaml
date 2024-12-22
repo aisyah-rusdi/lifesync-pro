@@ -48,6 +48,9 @@ dependencies:
   fl_chart: ^0.69.2
   flutter_datetime_picker: ^1.5.1
   intl: ^0.20.1
+  image: ^4.0.15
+  flutter_image_compress: ^2.3.0
+  email_validator: ^2.0.1
 
 dev_dependencies:
   flutter_test:

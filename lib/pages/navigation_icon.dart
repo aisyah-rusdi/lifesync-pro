@@ -3,10 +3,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase_project/pages/community.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
 //import 'package:flutter_firebase_project/pages/challenge_page.dart';
 import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
 import 'package:flutter_firebase_project/pages/store_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
@@ -39,7 +39,8 @@ class HomePage extends StatefulWidget{
     List<Widget>get _pages => [
       Dashboard(),
       //ChallengePage(),
-      ToDoListPage(),
+      //ToDoListPage(),
+      CommunityPage(),
       LeaderboardPage(),
       StorePage(),
     ];
@@ -85,19 +86,18 @@ void initState() {
         children: [
           GestureDetector(
             onTap: () {
-              Navigator.push(
-                context, 
-                MaterialPageRoute(
-                  builder: (context) => ProfilePage(),
-                  ),
-                );
+              // Ensure context is correctly passed to Navigator
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (context) => ProfilePage()),
+              );
             },
             child: _image != null
-                        ? CircleAvatar(
-                            backgroundImage: MemoryImage(_image!),
-                            radius: 25,
-                          ) // Display the profile image
-                        : Icon(Icons.account_circle, size: 35)), // Profile icon
+                ? CircleAvatar(
+                    backgroundImage: MemoryImage(_image!),
+                    radius: 25,
+                  ) // Display the profile image
+                : Icon(Icons.account_circle, size: 35), // Profile icon
+            ),
                 SizedBox(width: 8), // Spacing between icon and text
                 Text(
                   userName ?? 'Welcome',
@@ -198,8 +198,8 @@ void initState() {
               label: 'Home',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.add),
-              label: 'To-Do',
+              icon: Icon(Icons.people),
+              label: 'Community',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.leaderboard),
