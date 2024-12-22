@@ -65,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
           minHeight: 600,
           quality: 80, // Lower quality if needed to meet size requirements
         );
-        strippedImageBytes = result!;
+        strippedImageBytes = result;
       }
 
       // Encode the compressed image into a base64 string
@@ -100,11 +100,23 @@ class _ProfilePageState extends State<ProfilePage> {
           .get();
 
       if (userDoc.exists) {
-        String? encodedImage = userDoc.get('profileImage');
-        if (encodedImage != null) {
+        // Cast userDoc.data() to a Map<String, dynamic>
+        Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
+
+        // Check if the 'profileImage' field exists in the map
+        if (data.containsKey('profileImage')) {
+          String? encodedImage = data['profileImage'];
+          if (encodedImage != null) {
+            setState(() {
+              _encodedImage = encodedImage;
+              _image =
+                  base64Decode(encodedImage); // Decode and display the image
+            });
+          }
+        } else {
+          // If no profileImage exists, use a default or leave _image as null
           setState(() {
-            _encodedImage = encodedImage;
-            _image = base64Decode(encodedImage); // Decode and display the image
+            _image = null; // Or set a default image
           });
         }
       }
@@ -633,11 +645,8 @@ class _ProfilePageState extends State<ProfilePage> {
                                     radius: 64,
                                     backgroundImage: MemoryImage(_image!),
                                   )
-                                : const CircleAvatar(
-                                    radius: 64,
-                                    backgroundImage: NetworkImage(
-                                        'https://thumbs.dreamstime.com/b/default-avatar-profile-icon-social-media-user-image-210115353.jpg'),
-                                  ),
+                                : Icon(Icons.account_circle,
+                                    size: 120), // Profile icon
                             Positioned(
                               bottom: -10,
                               left: 80,

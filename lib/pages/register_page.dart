@@ -27,12 +27,24 @@ class _RegisterPageState extends State<RegisterPage> {
   bool _isConfirmPasswordVisible = false;
 
   // Focus nodes to track focus state
+  final _firstNameFocusNode = FocusNode();
+  final _lastNameFocusNode = FocusNode();
+  final _ageFocusNode = FocusNode();
+  final _weightFocusNode = FocusNode();
+  final _heightFocusNode = FocusNode();
+  final _emailFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
 
   final String _passwordHintMessage =
       'Password must be at least 8 characters long and include at least 1 uppercase letter and 1 special character.';
   Color _passwordHintColor = Colors.black;
+  Color _firstNameBorderColor = Colors.white;
+  Color _lastNameBordercolor = Colors.white;
+  Color _ageBorderColor = Colors.white;
+  Color _weightBorderColor = Colors.white;
+  Color _heightBorderColor = Colors.white;
+  Color _emailBorderColor = Colors.white;
   Color _passwordBorderColor = Colors.white;
   Color _confirmPasswordBorderColor = Colors.white;
 
@@ -41,6 +53,72 @@ class _RegisterPageState extends State<RegisterPage> {
     super.initState();
 
     // Add listeners to handle focus changes
+    _firstNameFocusNode.addListener(() {
+      if (!_firstNameFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _firstNameBorderColor = (_firstNameController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
+    _lastNameFocusNode.addListener(() {
+      if (!_lastNameFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _lastNameBordercolor = (_lastNameController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
+    _ageFocusNode.addListener(() {
+      if (!_ageFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _ageBorderColor = (_ageController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
+    _weightFocusNode.addListener(() {
+      if (!_weightFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _weightBorderColor = (_weightController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
+    _heightFocusNode.addListener(() {
+      if (!_heightFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _heightBorderColor = (_heightController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
+    _emailFocusNode.addListener(() {
+      if (!_emailFocusNode.hasFocus) {
+        // Validate confirm password when leaving the field
+        setState(() {
+          _emailBorderColor = (_emailController.text.trim().isNotEmpty)
+              ? Colors.green
+              : Colors.red;
+        });
+      }
+    });
+
     _passwordFocusNode.addListener(() {
       if (!_passwordFocusNode.hasFocus) {
         // Validate password when leaving the field
@@ -91,6 +169,12 @@ class _RegisterPageState extends State<RegisterPage> {
     _ageController.dispose();
     _weightController.dispose();
     _heightController.dispose();
+    _firstNameFocusNode.dispose();
+    _lastNameFocusNode.dispose();
+    _ageFocusNode.dispose();
+    _weightFocusNode.dispose();
+    _heightFocusNode.dispose();
+    _emailFocusNode.dispose();
     _passwordFocusNode.dispose();
     _confirmPasswordFocusNode.dispose();
     super.dispose();
@@ -283,36 +367,46 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 30),
 
                 // First name textfield
-                _buildTextField(_firstNameController, "First Name"),
+                _buildTextField(_firstNameController, "First Name",
+                    _firstNameFocusNode, _firstNameBorderColor),
                 const SizedBox(height: 10),
 
                 // Last name textfield
-                _buildTextField(_lastNameController, "Last Name"),
+                _buildTextField(_lastNameController, "Last Name",
+                    _lastNameFocusNode, _lastNameBordercolor),
                 const SizedBox(height: 10),
 
                 // Age textfield
-                _buildTextField(_ageController, "Age"),
+                _buildTextField(
+                    _ageController, "Age", _ageFocusNode, _ageBorderColor),
                 const SizedBox(height: 10),
 
                 // Weight textfield
-                _buildTextField(_weightController, "Weight in kg"),
+                _buildTextField(_weightController, "Weight in kg",
+                    _weightFocusNode, _weightBorderColor),
                 const SizedBox(height: 10),
 
                 // Height textfield
-                _buildTextField(_heightController, "Height in cm"),
+                _buildTextField(_heightController, "Height in cm",
+                    _heightFocusNode, _heightBorderColor),
                 const SizedBox(height: 10),
 
                 // Email textfield
-                _buildTextField(_emailController, "Email"),
+                _buildTextField(_emailController, "Email", _emailFocusNode,
+                    _emailBorderColor),
                 const SizedBox(height: 10),
 
                 // Password textfield
-                _buildPasswordField(_passwordController, "Password"),
+                _buildPasswordField(_passwordController, "Password",
+                    _passwordFocusNode, _passwordBorderColor),
                 const SizedBox(height: 10),
 
                 // Confirm password textfield
                 _buildConfirmPasswordField(
-                    _confirmpasswordController, "Confirm Password"),
+                    _confirmpasswordController,
+                    "Confirm Password",
+                    _confirmPasswordFocusNode,
+                    _confirmPasswordBorderColor),
                 const SizedBox(height: 10),
 
                 // Sign up button
@@ -369,11 +463,13 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String hint) {
+  Widget _buildTextField(TextEditingController controller, String hint,
+      FocusNode focusNode, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: TextField(
         controller: controller,
+        focusNode: focusNode,
         inputFormatters: hint == "First Name" || hint == "Last Name"
             ? [LengthLimitingTextInputFormatter(10)]
             : null,
@@ -383,7 +479,7 @@ class _RegisterPageState extends State<RegisterPage> {
                 : TextInputType.text,
         decoration: InputDecoration(
           enabledBorder: OutlineInputBorder(
-            borderSide: const BorderSide(color: Colors.white),
+            borderSide: BorderSide(color: color),
             borderRadius: BorderRadius.circular(12),
           ),
           focusedBorder: OutlineInputBorder(
@@ -398,21 +494,22 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-  Widget _buildPasswordField(TextEditingController controller, String hint) {
+  Widget _buildPasswordField(TextEditingController controller, String hint,
+      FocusNode focusNode, Color color) {
     return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 25.0),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           TextField(
             obscureText: !_isPasswordVisible,
             controller: controller,
-            focusNode: _passwordFocusNode,
+            focusNode: focusNode,
             decoration: InputDecoration(
               enabledBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: _passwordBorderColor),
+                borderSide: BorderSide(color: color),
                 borderRadius: BorderRadius.circular(12),
               ),
               focusedBorder: OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.deepPurple),
+                borderSide: const BorderSide(color: Colors.deepPurple),
                 borderRadius: BorderRadius.circular(12),
               ),
               hintText: hint,
@@ -441,21 +538,21 @@ class _RegisterPageState extends State<RegisterPage> {
         ]));
   }
 
-  Widget _buildConfirmPasswordField(
-      TextEditingController controller, String hint) {
+  Widget _buildConfirmPasswordField(TextEditingController controller,
+      String hint, FocusNode focusNode, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: TextField(
         obscureText: !_isConfirmPasswordVisible,
         controller: controller,
-        focusNode: _confirmPasswordFocusNode,
+        focusNode: focusNode,
         decoration: InputDecoration(
             enabledBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: _confirmPasswordBorderColor),
+              borderSide: BorderSide(color: color),
               borderRadius: BorderRadius.circular(12),
             ),
             focusedBorder: OutlineInputBorder(
-              borderSide: BorderSide(color: Colors.deepPurple),
+              borderSide: const BorderSide(color: Colors.deepPurple),
               borderRadius: BorderRadius.circular(12),
             ),
             hintText: hint,

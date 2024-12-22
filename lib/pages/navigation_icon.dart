@@ -12,85 +12,86 @@ import 'package:flutter_firebase_project/pages/store_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'dart:typed_data';
 
-class HomePage extends StatefulWidget{
-  const HomePage({Key ? key}) : super(key : key);
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  final user = FirebaseAuth.instance.currentUser!;
+  int _selectedIndex = 0;
+  String? userName;
+  String? _encodedImage; // Holds the base64-encoded image string
+  Uint8List? _image; // Decoded image data for display
+
+  void _navigateBottomBar(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
 
-  class _HomePageState extends State<HomePage> {
+  List<Widget> get _pages => [
+        Dashboard(),
+        //ChallengePage(),
+        ToDoListPage(),
+        LeaderboardPage(),
+        StorePage(),
+      ];
 
-    final user = FirebaseAuth.instance.currentUser!;
-    int _selectedIndex = 0;
-    String? userName;
-    String? _encodedImage; // Holds the base64-encoded image string
-    Uint8List? _image; // Decoded image data for display
+  void _listenToUserData() {
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists) {
+        setState(() {
+          // Fetch and update user name
+          userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
 
+          if (snapshot.data()!.containsKey('profileImage')) {
+            String? encodedImage = snapshot.get('profileImage');
+            if (encodedImage != null) {
+              _encodedImage = encodedImage;
+              _image =
+                  base64Decode(encodedImage); // Decode and update the image
+            }
+          } else {
+            _image = null;
+          }
+        });
+      }
+    });
+  }
 
-    void _navigateBottomBar(int index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _listenToUserData(); // Set up the listener
+  }
 
-    List<Widget>get _pages => [
-      Dashboard(),
-      //ChallengePage(),
-      ToDoListPage(),
-      LeaderboardPage(),
-      StorePage(),
-    ];
-
-    void _listenToUserData() {
-  FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .snapshots()
-      .listen((snapshot) {
-    if (snapshot.exists) {
-      setState(() {
-        // Fetch and update user name
-        userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
-
-        // Fetch and decode profile image
-        String? encodedImage = snapshot.get('profileImage');
-        if (encodedImage != null) {
-          _encodedImage = encodedImage;
-          _image = base64Decode(encodedImage); // Decode and update the image
-        }
-      });
-    }
-  });
-}
-
-@override
-void initState() {
-  super.initState();
-  _listenToUserData(); // Set up the listener
-}
-
-
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Row(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-      // Left side with profile icon and welcoming text
-      Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              Navigator.push(
-                context, 
-                MaterialPageRoute(
-                  builder: (context) => ProfilePage(),
-                  ),
-                );
-            },
-            child: _image != null
+            // Left side with profile icon and welcoming text
+            Row(
+              children: [
+                GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfilePage(),
+                        ),
+                      );
+                    },
+                    child: _image != null
                         ? CircleAvatar(
                             backgroundImage: MemoryImage(_image!),
                             radius: 25,
@@ -104,14 +105,12 @@ void initState() {
               ],
             ),
 
-    
-    
-    // Right side with points, notification, and profile icons
-    Row(
-      children: [
-        Icon(Icons.notifications, size: 30), // Notification icon
-        SizedBox(width: 8),
-        GestureDetector(
+            // Right side with points, notification, and profile icons
+            Row(
+              children: [
+                Icon(Icons.notifications, size: 30), // Notification icon
+                SizedBox(width: 8),
+                GestureDetector(
                   onTap: () {
                     // Show confirmation dialog
                     showDialog(
@@ -145,30 +144,27 @@ void initState() {
                     size: 30,
                   ),
                 )
-
               ],
             ),
           ],
         ),
-
         backgroundColor: const Color.fromARGB(255, 139, 190, 228),
-
-        ),
-
-        body: _pages[_selectedIndex],
-        
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _navigateBottomBar,
-          type: BottomNavigationBarType.fixed,
-          items:[
-            BottomNavigationBarItem(icon: Icon(Icons.home), label:'Home'),
-            //BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
-            BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
-            BottomNavigationBarItem(icon: Icon(Icons.leaderboard), label:'Leaderboard'),
-            BottomNavigationBarItem(icon: Icon(Icons.shopping_bag), label:'Store'),
-          ],
-        ),
-      );
-    }
+      ),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _navigateBottomBar,
+        type: BottomNavigationBarType.fixed,
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          //BottomNavigationBarItem(icon: Icon(Icons.task_alt), label:'Challenge'),
+          BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Todo List'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.leaderboard), label: 'Leaderboard'),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.shopping_bag), label: 'Store'),
+        ],
+      ),
+    );
   }
+}
