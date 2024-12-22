@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_firebase_project/pages/component/activity_detail.dart';
 import 'package:flutter_firebase_project/pages/component/wall_post.dart';
 
 class CommunityPage extends StatefulWidget {
@@ -15,7 +16,8 @@ class _CommunityGroupPageState extends State<CommunityPage> {
   final activityNameController = TextEditingController();
   final numPeopleController = TextEditingController();
   final categoryController = TextEditingController();
-  final dateTimeController = TextEditingController();
+  final dateController = TextEditingController();
+  final timeController = TextEditingController();
   final locationController = TextEditingController();
 
   String? selectedCategory; // Selected category value
@@ -25,13 +27,15 @@ class _CommunityGroupPageState extends State<CommunityPage> {
     if (activityNameController.text.isNotEmpty &&
         numPeopleController.text.isNotEmpty &&
         selectedCategory != null && // Check if category is selected
-        dateTimeController.text.isNotEmpty &&
+        dateController.text.isNotEmpty &&
+        timeController.text.isNotEmpty &&
         locationController.text.isNotEmpty) { // Check for location
       FirebaseFirestore.instance.collection("messages").add({
         'ActivityName': activityNameController.text,
         'Category': selectedCategory, // Save selected category
         'NumPeople': int.tryParse(numPeopleController.text) ?? 0,
-        'DateTime': dateTimeController.text,
+        'Date': dateController.text, // Save separate date
+        'Time': timeController.text, // Save separate time
         'Location': locationController.text,
         'UserEmail': currentUser.email,
         'UserId': currentUser.uid,
@@ -43,7 +47,8 @@ class _CommunityGroupPageState extends State<CommunityPage> {
         activityNameController.clear();
         numPeopleController.clear();
         categoryController.clear();
-        dateTimeController.clear();
+        dateController.clear();
+        timeController.clear();
         locationController.clear();
         selectedCategory = null; // Clear selected category
       });
@@ -65,7 +70,7 @@ class _CommunityGroupPageState extends State<CommunityPage> {
                 decoration: const InputDecoration(hintText: "Activity Name"),
               ),
               const SizedBox(height: 10),
-              
+
               // Category - DropdownButton for selection
               DropdownButtonFormField<String>(
                 value: selectedCategory,
@@ -99,7 +104,7 @@ class _CommunityGroupPageState extends State<CommunityPage> {
                 },
               ),
               const SizedBox(height: 10),
-              
+
               // Number of People
               TextField(
                 controller: numPeopleController,
@@ -107,7 +112,7 @@ class _CommunityGroupPageState extends State<CommunityPage> {
                 decoration: const InputDecoration(hintText: "Number of People"),
               ),
               const SizedBox(height: 10),
-              
+
               // Location
               TextField(
                 controller: locationController,
@@ -115,10 +120,10 @@ class _CommunityGroupPageState extends State<CommunityPage> {
               ),
               const SizedBox(height: 10),
 
-              // Date and Time
+              // Date
               TextField(
-                controller: dateTimeController,
-                decoration: const InputDecoration(hintText: "Date and Time"),
+                controller: dateController,
+                decoration: const InputDecoration(hintText: "Date"),
                 onTap: () async {
                   FocusScope.of(context).requestFocus(FocusNode());
                   final selectedDate = await showDatePicker(
@@ -129,21 +134,29 @@ class _CommunityGroupPageState extends State<CommunityPage> {
                   );
 
                   if (selectedDate != null) {
-                    final selectedTime = await showTimePicker(
-                      context: context,
-                      initialTime: TimeOfDay.now(),
-                    );
+                    final formattedDate =
+                        "${selectedDate.year}-${selectedDate.month}-${selectedDate.day}";
+                    dateController.text = formattedDate;
+                  }
+                },
+              ),
+              const SizedBox(height: 10),
 
-                    if (selectedTime != null) {
-                      final dateTime = DateTime(
-                        selectedDate.year,
-                        selectedDate.month,
-                        selectedDate.day,
-                        selectedTime.hour,
-                        selectedTime.minute,
-                      );
-                      dateTimeController.text = dateTime.toString();
-                    }
+              // Time
+              TextField(
+                controller: timeController,
+                decoration: const InputDecoration(hintText: "Time"),
+                onTap: () async {
+                  FocusScope.of(context).requestFocus(FocusNode());
+                  final selectedTime = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay.now(),
+                  );
+
+                  if (selectedTime != null) {
+                    final formattedTime =
+                        "${selectedTime.hour}:${selectedTime.minute.toString().padLeft(2, '0')}";
+                    timeController.text = formattedTime;
                   }
                 },
               ),
@@ -172,49 +185,75 @@ class _CommunityGroupPageState extends State<CommunityPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          children: [
-            // Expanded widget to show all messages
-            Expanded(
-              child: StreamBuilder(
-                stream: FirebaseFirestore.instance
-                    .collection("messages")
-                    .orderBy("TimeStamp", descending: true)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return ListView.builder(
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        final post = snapshot.data!.docs[index];
-                        return WallPost(
+      body: Column(
+        children: [
+          // TextField above the ListView
+          Padding(
+            padding: const EdgeInsets.all(15.0),
+            child: TextField(
+              onTap: showMessageDialog,
+              readOnly: true, // Makes the field non-editable
+              decoration: InputDecoration(
+                hintText: "Tap to post an activity...",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                prefixIcon: const Icon(Icons.add),
+              ),
+            ),
+          ),
+          // Expanded widget to show all messages
+          Expanded(
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection("messages")
+                  .orderBy("TimeStamp", descending: true)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return ListView.builder(
+                    itemCount: snapshot.data!.docs.length,
+                    itemBuilder: (context, index) {
+                      final post = snapshot.data!.docs[index];
+
+                      return GestureDetector(
+                        onTap: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) => ActivityDetail(
+                              activityName: post['ActivityName'],
+                              category: post['Category'],
+                              numPeople: post['NumPeople'],
+                              date: post['Date'], // Pass date
+                              time: post['Time'], // Pass time
+                              location: post['Location'],
+                              userEmail: post['UserEmail'],
+                            ),
+                          );
+                        },
+                        child: WallPost(
                           message: post['ActivityName'],
                           user: post['UserEmail'],
                           userId: post['UserId'], // Pass user ID to WallPost
                           postId: post.id,
-                          likes: List<String>.from(post['Likes'] ?? []),
-                        );
-                      },
-                    );
-                  } else if (snapshot.hasError) {
-                    return Center(
-                      child: Text('Error: ${snapshot.error}'),
-                    );
-                  }
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                          likes: List<String>.from(post['Likes'] ?? []), 
+                          numPeople: post['NumPeople'],
+                        ),
+                      );
+                    },
                   );
-                },
-              ),
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text('Error: ${snapshot.error}'),
+                  );
+                }
+                return const Center(
+                  child: CircularProgressIndicator(),
+                );
+              },
             ),
-          ],
-        ),
-      ),
-      // Floating Action Button for posting messages
-      floatingActionButton: FloatingActionButton(
-        onPressed: showMessageDialog,
-        child: const Icon(Icons.add),
+          ),
+        ],
       ),
     );
   }

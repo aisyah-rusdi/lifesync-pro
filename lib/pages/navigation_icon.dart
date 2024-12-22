@@ -46,26 +46,30 @@ class HomePage extends StatefulWidget{
     ];
 
     void _listenToUserData() {
-  FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .snapshots()
-      .listen((snapshot) {
-    if (snapshot.exists) {
-      setState(() {
-        // Fetch and update user name
-        userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists) {
+        setState(() {
+          // Fetch and update user name
+          userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
 
-        // Fetch and decode profile image
-        String? encodedImage = snapshot.get('profileImage');
-        if (encodedImage != null) {
-          _encodedImage = encodedImage;
-          _image = base64Decode(encodedImage); // Decode and update the image
-        }
-      });
-    }
-  });
-}
+          if (snapshot.data()!.containsKey('profileImage')) {
+            String? encodedImage = snapshot.get('profileImage');
+            if (encodedImage != null) {
+              _encodedImage = encodedImage;
+              _image =
+                  base64Decode(encodedImage); // Decode and update the image
+            }
+          } else {
+            _image = null;
+          }
+        });
+      }
+    });
+  }
 
 @override
 void initState() {

@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ class WallPost extends StatefulWidget {
   final String userId;
   final String postId;
   final List<String> likes;
+  final int numPeople; // Added numPeople for max capacity
 
   const WallPost({
     super.key,
@@ -18,6 +18,7 @@ class WallPost extends StatefulWidget {
     required this.userId,
     required this.postId,
     required this.likes,
+    required this.numPeople, // Pass numPeople from the post data
   });
 
   @override
@@ -25,7 +26,6 @@ class WallPost extends StatefulWidget {
 }
 
 class _WallPostState extends State<WallPost> {
-
   final currentUser = FirebaseAuth.instance.currentUser!;
   bool isLiked = false;
 
@@ -35,114 +35,113 @@ class _WallPostState extends State<WallPost> {
     isLiked = widget.likes.contains(currentUser.email);
   }
 
-  void toggleLike() {
-    setState(() {
-      isLiked = !isLiked;
-    });
+  // Function to toggle the like button and show dialog
+  void toggleLike() async {
+    if (isLiked || widget.likes.length < widget.numPeople) {
+      // If already liked, remove like or show dialog to ask for joining
+      setState(() {
+        isLiked = !isLiked;
+      });
 
-    DocumentReference postRef = 
-      FirebaseFirestore.instance.collection('messages').doc(widget.postId);
+      DocumentReference postRef = FirebaseFirestore.instance.collection('messages').doc(widget.postId);
 
       if (isLiked) {
-        postRef.update({
-          'Likes' : FieldValue.arrayUnion([currentUser.email])
-        });
-      } else{
+        // Ask if user wants to join the activity
+        bool? wantToJoin = await showDialog<bool>(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('Interested in Joining?'),
+              content: const Text('Would you like to join this activity?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, false); // No
+                  },
+                  child: const Text('No'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context, true); // Yes
+                  },
+                  child: const Text('Yes'),
+                ),
+              ],
+            );
+          },
+        );
+
+        // If the user confirms, update likes
+        if (wantToJoin == true) {
+          postRef.update({
+            'Likes': FieldValue.arrayUnion([currentUser.email])
+          });
+        } else {
+          setState(() {
+            isLiked = false;
+          });
+        }
+      } else {
         postRef.update({
           'Likes': FieldValue.arrayRemove([currentUser.email])
         });
       }
-  }
-  
-
-  // Fetches the user's profile image from Firestore
-  Future<Widget> _getProfileImage(String userId) async {
-    try {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      if (userDoc.exists) {
-        final encodedImage = userDoc.get('profileImage') as String?;
-        if (encodedImage != null) {
-          final decodedImage = base64Decode(encodedImage);
-          return CircleAvatar(
-            backgroundImage: MemoryImage(decodedImage),
-            radius: 25,
-          );
-        }
-      }
-    } catch (e) {
-      debugPrint("Error fetching profile image: $e");
+    } else {
+      // Show a message when max participants are reached
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Maximum number of participants reached!")),
+      );
     }
-    // Fallback to a default avatar if no profile image exists
-    return CircleAvatar(
-      child: Icon(Icons.person, color: Colors.white),
-      radius: 25,
-      backgroundColor: Colors.grey[400],
-    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<Widget>(
-      future: _getProfileImage(widget.userId),
-      builder: (context, snapshot) {
-        final profileImage = snapshot.data ??
-            CircleAvatar(
-              child: Icon(Icons.person, color: Colors.white),
-              radius: 25,
-              backgroundColor: Colors.grey[400],
-            );
-
-        return Container(
-          margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(8),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.3),
-                blurRadius: 5,
-                spreadRadius: 1,
-                offset: const Offset(0, 3),
-              ),
-            ],
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.3),
+            blurRadius: 5,
+            spreadRadius: 1,
+            offset: const Offset(0, 3),
           ),
-          child: Row(
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.user,
+                  style: const TextStyle(fontSize: 14, color: Colors.grey),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  widget.message,
+                  style: const TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+          Column(
             children: [
-              profileImage,
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      widget.user,
-                      style: const TextStyle(fontSize: 14, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      widget.message,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
+              LikeButton(
+                isLiked: isLiked,
+                onTap: toggleLike,
+                maxLikes: widget.numPeople,
               ),
-                Column(
-                  children: [
-                    LikeButton(
-                      isLiked: isLiked, 
-                      onTap: toggleLike,
-                    ),
-
-                    const SizedBox(height: 5,),
-
-                    Text(widget.likes.length.toString()),
-                  ],
-                ),
+              const SizedBox(height: 5),
+              Text('${widget.likes.length} / ${widget.numPeople}'),
             ],
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 }

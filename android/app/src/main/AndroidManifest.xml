@@ -9,6 +9,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:requestLegacyExternalStorage="true"> <!-- For Android 10 or higher -->
+
         
         <activity
             android:name=".MainActivity"
