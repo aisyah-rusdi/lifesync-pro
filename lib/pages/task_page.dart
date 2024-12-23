@@ -15,16 +15,182 @@ class TaskPage extends StatefulWidget {
 class _TaskPage extends State<TaskPage> {
   final AudioPlayer _audioPlayer = AudioPlayer();
   final AudioPlayer _focusSound = AudioPlayer();
-
+  final user = FirebaseAuth.instance.currentUser!;
+  int exerciseScore = 0;
+  int studyScore = 0;
+  int meditateScore = 0;
+  int userPoints = 0;
   bool isMusicPlaying = true;
   bool isActivityRunning = false;
-
-  int userPoints = 0;
 
   List activityList = [
     ['Exercise', false, 0, 10, 1],
     ['Study', false, 0, 10, 1],
     ['Meditate', false, 0, 10, 1],
+  ];
+
+  List<Map<String, dynamic>> exercise_achievements = [
+    {
+      "name": "100 times exercises",
+      "condition": "exercise",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times exercises",
+      "condition": "exercise",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times exercises",
+      "condition": "exercise",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times exercises",
+      "condition": "exercise",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> study_achievements = [
+    {
+      "name": "100 times study",
+      "condition": "study",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times study",
+      "condition": "study",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times study",
+      "condition": "study",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times study",
+      "condition": "study",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> meditate_achievements = [
+    {
+      "name": "100 times meditation",
+      "condition": "meditate",
+      "target": 100,
+      "progress": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "250 times meditation",
+      "condition": "meditate",
+      "target": 250,
+      "progress": 0,
+      "color": Colors.lightBlue[300], // Silver
+      "unlocked": false,
+    },
+    {
+      "name": "500 times meditation",
+      "condition": "meditate",
+      "target": 500,
+      "progress": 0,
+      "color": Colors.orangeAccent, // Gold
+      "unlocked": false,
+    },
+    {
+      "name": "1000 times meditation",
+      "condition": "meditate",
+      "target": 1000,
+      "progress": 0,
+      "color": Colors.redAccent, // Rainbow
+      "unlocked": false,
+    },
+  ];
+
+  List<Map<String, dynamic>> balance_achievements = [
+    {
+      "name": "1 x exercise, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 1,
+      "target2": 1,
+      "target3": 1,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.teal[200],
+      "unlocked": false,
+    },
+    {
+      "name": "100 x exercises, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 100,
+      "target2": 100,
+      "target3": 100,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.lightBlue[300],
+      "unlocked": false,
+    },
+    {
+      "name": "250 x exercises, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 250,
+      "target2": 250,
+      "target3": 250,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.orangeAccent,
+      "unlocked": false,
+    },
+    {
+      "name": "500 x exercise, study, meditation",
+      "condition1": "exercise",
+      "condition2": "study",
+      "condition3": "meditate",
+      "target1": 500,
+      "target2": 500,
+      "target3": 500,
+      "progress1": 0,
+      "progress2": 0,
+      "progress3": 0,
+      "color": Colors.redAccent,
+      "unlocked": false,
+    },
   ];
 
   @override
@@ -38,18 +204,25 @@ class _TaskPage extends State<TaskPage> {
         .collection('users')
         .doc(FirebaseAuth.instance.currentUser!.uid);
 
-    // Use a transaction to safely update the points field (avoid race condition)
-    await FirebaseFirestore.instance.runTransaction((transaction) async {
-      final snapshot = await transaction.get(userDoc);
-      final currentPoints =
-          snapshot['points'] ?? 0; // Default to 0 if field does not exist
-      final taskScore = snapshot[taskName] ?? 0;
+    try {
+      // Use a transaction to safely update the points field (avoid race condition)
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        final snapshot = await transaction.get(userDoc);
+        final currentPoints =
+            snapshot['points'] ?? 0; // Default to 0 if field does not exist
+        final taskScore = snapshot[taskName] ?? 0;
 
-      transaction.update(userDoc, {
-        'points': currentPoints + pointsToAdd,
-        taskName: taskScore + pointsToAdd,
+        print(
+            "Updating $taskName: Current: $taskScore, Adding: $pointsToAdd"); // Debug log
+
+        transaction.update(userDoc, {
+          'points': currentPoints + pointsToAdd,
+          taskName: taskScore + pointsToAdd,
+        });
       });
-    });
+    } catch (e) {
+      print("Error adding points to $taskName: $e");
+    }
   }
 
   Future<void> fetchUserPoints() async {
@@ -233,6 +406,9 @@ class _TaskPage extends State<TaskPage> {
           addPoints(taskField, pointsToAdd).then((_) {
             setState(() {
               userPoints += pointsToAdd;
+
+              // Check achievements after updating points
+              checkAchievements();
             });
           });
         }
@@ -241,6 +417,129 @@ class _TaskPage extends State<TaskPage> {
   }
 
   void settingsOpened(int index) {}
+
+  Future<void> checkAchievements() async {
+    try {
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (mounted) {
+        setState(() {
+          if (userDoc.exists) {
+            // Fetch task scores
+            exerciseScore = userDoc.get('exerciseScore') ?? 0;
+            studyScore = userDoc.get('studyScore') ?? 0;
+            meditateScore = userDoc.get('meditateScore') ?? 0;
+
+            for (var achievement in exercise_achievements) {
+              String condition4 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition4}Score') ?? 0;
+
+              print("Checking exercise achievement: ${achievement['name']}, "
+                  "Progress: ${achievement['progress']}, Target: ${achievement['target']}");
+
+              if (!achievement['unlocked'] &&
+                  (achievement['progress'] ?? 0) >= achievement['target']) {
+                achievement['unlocked'] = true;
+                showAchievementNotification(achievement['name']);
+              }
+            }
+
+            for (var achievement in study_achievements) {
+              String condition5 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition5}Score') ?? 0;
+
+              print("Checking exercise achievement: ${achievement['name']}, "
+                  "Progress: ${achievement['progress']}, Target: ${achievement['target']}");
+
+              if (!achievement['unlocked'] &&
+                  (achievement['progress'] ?? 0) >= achievement['target']) {
+                achievement['unlocked'] = true;
+                showAchievementNotification(achievement['name']);
+              }
+            }
+
+            for (var achievement in meditate_achievements) {
+              String condition6 = achievement['condition'];
+              achievement['progress'] = userDoc.get('${condition6}Score') ?? 0;
+
+              print("Checking exercise achievement: ${achievement['name']}, "
+                  "Progress: ${achievement['progress']}, Target: ${achievement['target']}");
+
+              if (!achievement['unlocked'] &&
+                  (achievement['progress'] ?? 0) >= achievement['target']) {
+                achievement['unlocked'] = true;
+                showAchievementNotification(achievement['name']);
+              }
+            }
+
+            for (var achievement in balance_achievements) {
+              String condition1 = achievement['condition1'];
+              achievement['progress1'] = userDoc.get('${condition1}Score') ?? 0;
+              String condition2 = achievement['condition2'];
+              achievement['progress2'] = userDoc.get('${condition2}Score') ?? 0;
+              String condition3 = achievement['condition3'];
+              achievement['progress3'] = userDoc.get('${condition3}Score') ?? 0;
+
+              print("Checking achievement: ${achievement['name']}, "
+                  "Progress1: ${achievement['progress1']}/Target1: ${achievement['target1']}, "
+                  "Progress2: ${achievement['progress2']}/Target2: ${achievement['target2']}, "
+                  "Progress3: ${achievement['progress3']}/Target3: ${achievement['target3']}");
+
+              // Ensure targets are not null
+              achievement['target1'] ??= 0;
+              achievement['target2'] ??= 0;
+              achievement['target3'] ??= 0;
+
+              // Check if all conditions are met
+              bool condition1Met =
+                  achievement['progress1'] >= achievement['target1'];
+              bool condition2Met =
+                  achievement['progress2'] >= achievement['target2'];
+              bool condition3Met =
+                  achievement['progress3'] >= achievement['target3'];
+
+              if (!achievement['unlocked'] &&
+                  condition1Met &&
+                  condition2Met &&
+                  condition3Met) {
+                achievement['unlocked'] = true;
+                showAchievementNotification(achievement['name']);
+              }
+            }
+          } else {
+            "No data found";
+          }
+        });
+      }
+    } catch (e) {
+      print("Error fetching user data: $e");
+    }
+  }
+
+  void showAchievementNotification(String achievementName) {
+    print("Achievement Unlocked: $achievementName"); // Debug log
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Achievement Unlocked!"),
+          content: Text("Congratulations! You've unlocked: $achievementName"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text("OK"),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
