@@ -33,6 +33,7 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
   }
 
   Future<void> fetchLeaderboardData() async {
+    if (!mounted) return; // Ensure the widget is still in the tree before starting
   setState(() {
     isLoading = true;
   });
@@ -58,16 +59,20 @@ class _LeaderboardPageState extends State<LeaderboardPage> {
       (user) => user['id'] == currentUserId,
     );
 
-    setState(() {
-      leaderboard = fetchedLeaderboard;
-      currentUserRank = rank == -1 ? null : rank + 1; // Adjust for 0-based index
-      isLoading = false;
-    });
+    if (mounted) { // Ensure the widget is still in the tree
+      setState(() {
+        leaderboard = fetchedLeaderboard;
+        currentUserRank = rank == -1 ? null : rank + 1; // Adjust for 0-based index
+        isLoading = false;
+      });
+    }
   } catch (e) {
     print("Error fetching leaderboard data: $e");
-    setState(() {
-      isLoading = false;
-    });
+    if (mounted) { // Ensure the widget is still in the tree
+      setState(() {
+        isLoading = false;
+      });
+    }
   }
 }
 

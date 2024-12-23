@@ -334,6 +334,7 @@ class _DashboardState extends State<Dashboard> {
                       child: TaskProgressChart(
                           taskScores: taskScores, filter: selectedFilter),
                     ),
+                    const SizedBox(height: 30),
                   ],
                 ),
               );
