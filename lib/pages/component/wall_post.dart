@@ -35,6 +35,40 @@ class _WallPostState extends State<WallPost> {
     isLiked = widget.likes.contains(currentUser.email);
   }
 
+  void showLikedUsers() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Users who will join this activity'),
+        content: widget.likes.isNotEmpty
+            ? SizedBox(
+                height: 200,
+                width: 300,
+                child: ListView.builder(
+                  itemCount: widget.likes.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(widget.likes[index]),
+                    );
+                  },
+                ),
+              )
+            : const Text('No users yet!'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: const Text('Close'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
   // Function to toggle the like button and show dialog
   void toggleLike() async {
     if (isLiked || widget.likes.length < widget.numPeople) {
@@ -131,15 +165,19 @@ class _WallPostState extends State<WallPost> {
           ),
           Column(
             children: [
-              LikeButton(
-                isLiked: isLiked,
+              GestureDetector(
                 onTap: toggleLike,
-                maxLikes: widget.numPeople,
+                onLongPress: showLikedUsers, // Show users on long press
+                child: LikeButton(
+                  isLiked: isLiked,
+                  maxLikes: widget.numPeople,
+                ),
               ),
               const SizedBox(height: 5),
               Text('${widget.likes.length} / ${widget.numPeople}'),
             ],
           ),
+
         ],
       ),
     );

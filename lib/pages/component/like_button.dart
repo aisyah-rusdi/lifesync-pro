@@ -2,24 +2,20 @@ import 'package:flutter/material.dart';
 
 class LikeButton extends StatelessWidget {
   final bool isLiked;
-  final void Function()? onTap;
   final int maxLikes;
 
-  LikeButton({
+  const LikeButton({
     super.key,
     required this.isLiked,
-    required this.onTap,
     required this.maxLikes,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Icon(
-        isLiked ? Icons.favorite : Icons.favorite_border,
-        color: isLiked ? Colors.red : Colors.grey,
-      ),
+    return Icon(
+      isLiked ? Icons.favorite : Icons.favorite_border,
+      color: isLiked ? Colors.red : Colors.grey,
     );
   }
 }
+
