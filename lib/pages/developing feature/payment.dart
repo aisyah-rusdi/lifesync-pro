@@ -1,11 +1,17 @@
 import 'package:flutter/material.dart';
 import 'duitnow.dart';
 import 'tng.dart';
+import 'points.dart';
 
 class PaymentPage extends StatelessWidget {
   final int totalPriceInCents;
+  final int userPoints;
+  final Map<String, dynamic> address;
 
-  PaymentPage({required this.totalPriceInCents});
+  PaymentPage(
+      {required this.totalPriceInCents,
+      required this.userPoints,
+      required this.address});
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +56,21 @@ class PaymentPage extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => TouchNGoQRPage(
                       totalPrice: totalPriceInCents / 100,
+                    ),
+                  ),
+                );
+              },
+            ),
+            PaymentOptionButton(
+              icon: Icons.star,
+              label: 'Pay with Points',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PointDeductionPage(
+                      totalPriceInCents: totalPriceInCents,
+                      userPoints: userPoints,
                     ),
                   ),
                 );

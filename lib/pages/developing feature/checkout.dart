@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'payment.dart'; // Ensure this is the correct import for the PaymentPage
+import 'address.dart';
 
 class CheckoutPage extends StatefulWidget {
   final List<Map<String, dynamic>> cartItems;
@@ -18,32 +19,8 @@ class _CheckoutPageState extends State<CheckoutPage> {
   @override
   void initState() {
     super.initState();
-    // Initialize remainingPoints with the user's initial points
     remainingPoints = widget.userPoints;
     cartItems = widget.cartItems;
-  }
-
-  void purchaseWithPoints() async {
-    int totalPoints = cartItems.fold<int>(
-      0,
-      (sum, item) => sum + (item['cost'] as int),
-    );
-
-    if (remainingPoints >= totalPoints) {
-      setState(() {
-        remainingPoints -= totalPoints;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Purchase successful using points!')),
-      );
-
-      Navigator.pop(context, remainingPoints); // Return updated points
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Not enough points!')),
-      );
-    }
   }
 
   void addItem(Map<String, dynamic> item) {
@@ -85,7 +62,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
                 return ListTile(
                   title: Text(item['itemName']),
                   subtitle: Text(
-                      '${item['cost']} points or \RM${item['priceInCents'] / 100}'),
+                      '${item['cost']} points or RM${item['priceInCents'] / 100}'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
@@ -117,30 +94,24 @@ class _CheckoutPageState extends State<CheckoutPage> {
                     style: TextStyle(fontSize: 18)),
                 Text('Total Points: $totalPoints',
                     style: TextStyle(fontSize: 18)),
-                Text('Total Price: \RM${totalPriceInCents / 100}',
+                Text('Total Price: RM${totalPriceInCents / 100}',
                     style: TextStyle(fontSize: 18)),
                 SizedBox(height: 16.0),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    ElevatedButton(
-                      onPressed: purchaseWithPoints,
-                      child: Text('Pay with Points'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentPage(
-                              totalPriceInCents: totalPriceInCents,
-                            ),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => AddressPage(
+                            totalPriceInCents: totalPriceInCents,
+                            userPoints: widget.userPoints,
                           ),
-                        );
-                      },
-                      child: Text('Pay with Money'),
-                    ),
-                  ],
+                        ),
+                      );
+                    },
+                    child: Text('Proceed to Address'),
+                  ),
                 ),
               ],
             ),
