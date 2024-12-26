@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'duitnow.dart';
+import 'duitnow.dart'; // Make sure you import the DuitnowQRPage
 import 'tng.dart';
 import 'points.dart';
 
@@ -8,13 +8,17 @@ class PaymentPage extends StatelessWidget {
   final int userPoints;
   final Map<String, dynamic> address;
 
-  PaymentPage(
-      {required this.totalPriceInCents,
-      required this.userPoints,
-      required this.address});
+  PaymentPage({
+    required this.totalPriceInCents,
+    required this.userPoints,
+    required this.address,
+  });
 
   @override
   Widget build(BuildContext context) {
+    // Retrieve user phone number from address data
+    String userPhoneNumber = address['Phone'] ?? 'No phone number';
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Payment Methods'),
@@ -33,15 +37,24 @@ class PaymentPage extends StatelessWidget {
             SizedBox(height: 30),
             Text('Select Payment Method:', style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
+            // Display user phone number
+            Text(
+              'User Phone Number: $userPhoneNumber',
+              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            ),
+            SizedBox(height: 20),
             PaymentOptionButton(
               icon: Icons.money,
               label: 'Duitnow QR',
               onPressed: () {
+                // Pass both totalPrice and userPhoneNumber to DuitnowQRPage
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DuitnowQRPage(
-                      totalPrice: totalPriceInCents / 100,
+                      totalPrice:
+                          totalPriceInCents / 100.0, // Ensure it's a double
+                      userPhoneNumber: userPhoneNumber, // Pass the phone number
                     ),
                   ),
                 );
@@ -55,7 +68,8 @@ class PaymentPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => TouchNGoQRPage(
-                      totalPrice: totalPriceInCents / 100,
+                      totalPrice:
+                          totalPriceInCents / 100.0, // Pass double here as well
                     ),
                   ),
                 );
