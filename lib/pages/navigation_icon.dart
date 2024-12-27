@@ -5,9 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/community.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-//import 'package:flutter_firebase_project/pages/challenge_page.dart';
 import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
-import 'package:flutter_firebase_project/pages/developing%20feature/todolist.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
 import 'package:flutter_firebase_project/pages/store_page.dart';
 import 'package:flutter_firebase_project/pages/task_page.dart';
@@ -36,8 +34,6 @@ class _HomePageState extends State<HomePage> {
 
   List<Widget> get _pages => [
         Dashboard(),
-        //ChallengePage(),
-        //ToDoListPage(),
         CommunityPage(),
         LeaderboardPage(),
         StorePage(),

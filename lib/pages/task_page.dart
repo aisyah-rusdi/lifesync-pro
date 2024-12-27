@@ -13,15 +13,30 @@ class TaskPage extends StatefulWidget {
 }
 
 class _TaskPage extends State<TaskPage> {
-  final AudioPlayer _audioPlayer = AudioPlayer();
+  final AudioPlayer _alarmSound = AudioPlayer();
   final AudioPlayer _focusSound = AudioPlayer();
+  final AudioPlayer _successSound = AudioPlayer();
   final user = FirebaseAuth.instance.currentUser!;
+
+  bool isMusicPlaying = true;
+  bool isActivityRunning = false;
+
   int exerciseScore = 0;
   int studyScore = 0;
   int meditateScore = 0;
+
   int userPoints = 0;
-  bool isMusicPlaying = true;
-  bool isActivityRunning = false;
+  int exerciseDaily = 0;
+  int exerciseMonthly = 0;
+  int exerciseYearly = 0;
+
+  int studyDaily = 0;
+  int studyMonthly = 0;
+  int studyYearly = 0;
+
+  int meditateDaily = 0;
+  int meditateMonthly = 0;
+  int meditateYearly = 0;
 
   List activityList = [
     ['Exercise', false, 0, 10, 1],
@@ -204,25 +219,66 @@ class _TaskPage extends State<TaskPage> {
         .collection('users')
         .doc(FirebaseAuth.instance.currentUser!.uid);
 
-    try {
-      // Use a transaction to safely update the points field (avoid race condition)
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final snapshot = await transaction.get(userDoc);
-        final currentPoints =
-            snapshot['points'] ?? 0; // Default to 0 if field does not exist
-        final taskScore = snapshot[taskName] ?? 0;
+    DateTime now = DateTime.now();
+    int currentMonth = now.month;
+    int currentYear = now.year;
 
-        print(
-            "Updating $taskName: Current: $taskScore, Adding: $pointsToAdd"); // Debug log
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final snapshot = await transaction.get(userDoc);
+      if (!snapshot.exists) {
+        throw Exception("User document does not exist");
+      }
 
-        transaction.update(userDoc, {
-          'points': currentPoints + pointsToAdd,
-          taskName: taskScore + pointsToAdd,
-        });
+      // Get the current values for the task
+      var taskDaily = snapshot.data()?[taskName + 'Daily'] ?? 0;
+      var taskMonthly = snapshot.data()?[taskName + 'Monthly'] ?? 0;
+      var taskYearly = snapshot.data()?[taskName + 'Yearly'] ?? 0;
+      var taskMonth = snapshot.data()?[taskName + 'Month'] ?? 0;
+      var taskYear = snapshot.data()?[taskName + 'Year'] ?? 0;
+
+      // Keep the current daily points and just add new points
+      transaction.update(userDoc, {
+        '$taskName' + 'Daily': taskDaily + pointsToAdd,
       });
-    } catch (e) {
-      print("Error adding points to $taskName: $e");
-    }
+
+      // Check and update monthly points
+      if (taskMonth == currentMonth) {
+        // If the month is the same, just add to the monthly score
+        transaction.update(userDoc, {
+          '$taskName' + 'Monthly': taskMonthly + pointsToAdd,
+        });
+      } else {
+        // Reset the monthly points if it's a new month
+        transaction.update(userDoc, {
+          '$taskName' + 'Monthly': pointsToAdd,
+          '$taskName' + 'Month': currentMonth,
+        });
+      }
+
+      // Check and update yearly points
+      if (taskYear == currentYear) {
+        // If the year is the same, just add to the yearly score
+        transaction.update(userDoc, {
+          '$taskName' + 'Yearly': taskYearly + pointsToAdd,
+        });
+      } else {
+        // Reset the yearly points if it's a new year
+        transaction.update(userDoc, {
+          '$taskName' + 'Yearly': pointsToAdd,
+          '$taskName' + 'Year': currentYear,
+        });
+      }
+
+      // Update the total points by adding the task's points to the current total
+      int currentUserPoints = snapshot.data()?['points'] ?? 0;
+      int updatedUserPoints = currentUserPoints + pointsToAdd;
+
+      // Update the total points field in Firestore
+      transaction.update(userDoc, {
+        'points': updatedUserPoints,
+        taskName: (snapshot.data()?['$taskName'] ?? 0) + pointsToAdd,
+      });
+    });
   }
 
   Future<void> fetchUserPoints() async {
@@ -233,7 +289,19 @@ class _TaskPage extends State<TaskPage> {
       final snapshot = await userDoc.get();
       if (snapshot.exists) {
         setState(() {
-          userPoints = snapshot['points'] ?? 0; // Get points or default to 0
+          userPoints = snapshot.data()?['points'] ?? 0;
+
+          exerciseDaily = snapshot.data()?['exerciseDaily'] ?? 0;
+          exerciseMonthly = snapshot.data()?['exerciseMonthly'] ?? 0;
+          exerciseYearly = snapshot.data()?['exerciseYearly'] ?? 0;
+
+          studyDaily = snapshot.data()?['studyDaily'] ?? 0;
+          studyMonthly = snapshot.data()?['studyMonthly'] ?? 0;
+          studyYearly = snapshot.data()?['studyYearly'] ?? 0;
+
+          meditateDaily = snapshot.data()?['meditateDaily'] ?? 0;
+          meditateMonthly = snapshot.data()?['meditateMonthly'] ?? 0;
+          meditateYearly = snapshot.data()?['meditateYearly'] ?? 0;
         });
       }
     } catch (e) {
@@ -281,7 +349,7 @@ class _TaskPage extends State<TaskPage> {
     });
   }
 
-  void activityStarted(int index) {
+  Future<void> activityStarted(int index) async {
     if (activityList
         .any((activity) => activity[1] && activity != activityList[index])) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -335,84 +403,84 @@ class _TaskPage extends State<TaskPage> {
     var startTime = DateTime.now();
     int elapsedTime = activityList[index][2];
 
-    Timer.periodic(const Duration(seconds: 1), (timer) {
+    Timer.periodic(const Duration(seconds: 1), (timer) async {
       if (!mounted) return;
 
-      setState(() {
-        if (!activityList[index][1]) {
-          timer.cancel();
-          _focusSound.stop();
-        }
+      if (!activityList[index][1]) {
+        timer.cancel();
+        _focusSound.stop();
+      }
 
+      setState(() {
         var currentTime = DateTime.now();
         activityList[index][2] = elapsedTime +
             currentTime.second -
             startTime.second +
             60 * (currentTime.minute - startTime.minute) +
             60 * 60 * (currentTime.hour - startTime.hour);
+      });
 
-        // Check if the task time goal is reached
-        int currentTimeGoal = activityList[index][3] *
-            activityList[index][4]; // Multiply by the current multiplier
+      // Check if the task time goal is reached
+      int currentTimeGoal = activityList[index][3] *
+          activityList[index][4]; // Multiply by the current multiplier
 
-        if (activityList[index][2] > currentTimeGoal) {
-          timer.cancel();
+      if (activityList[index][2] > currentTimeGoal) {
+        timer.cancel();
+        setState(() {
           activityList[index][1] = false;
           activityList[index][2] = 0;
           isActivityRunning = false;
+        });
 
-          _focusSound.stop(); // Stop looping sound when time goal is reached
+        _focusSound.stop(); // Stop looping sound when time goal is reached
 
-          // Play alarm sound
-          _audioPlayer.play(AssetSource('audio/alarm.mp3'));
+        // Play alarm sound
+        _alarmSound.play(AssetSource('audio/alarm.mp3'));
 
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Congratulations!'),
-              content: Text(
-                  'You have completed the task: ${activityList[index][0]}. '
-                  '\nHave a nice rest for a longer journey'),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    _audioPlayer.stop(); // Stop the alarm
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Congratulations!'),
+            content:
+                Text('You have completed the task: ${activityList[index][0]}. '
+                    '\nHave a nice rest for a longer journey'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  _alarmSound.stop(); // Stop the alarm
+                  Navigator.of(context).pop();
+                },
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
 
-          // Add points based on multiplier
-          int pointsToAdd =
-              activityList[index][4]; // Multiplier determines points
-          String taskField = '';
-          switch (index) {
-            case 0:
-              taskField = 'exerciseScore';
-              break;
-
-            case 1:
-              taskField = 'studyScore';
-              break;
-
-            case 2:
-              taskField = 'meditateScore';
-              break;
-          }
-
-          addPoints(taskField, pointsToAdd).then((_) {
-            setState(() {
-              userPoints += pointsToAdd;
-
-              // Check achievements after updating points
-              checkAchievements();
-            });
-          });
+        // Add points based on multiplier
+        int pointsToAdd =
+            activityList[index][4]; // Multiplier determines points
+        String taskField = '';
+        switch (index) {
+          case 0:
+            taskField = 'exerciseScore';
+            break;
+          case 1:
+            taskField = 'studyScore';
+            break;
+          case 2:
+            taskField = 'meditateScore';
+            break;
         }
-      });
+
+        await addPoints(taskField, pointsToAdd);
+        await Future.delayed(
+            const Duration(seconds: 1)); // Allow Firestore sync
+        await checkAchievements();
+
+        setState(() {
+          userPoints += pointsToAdd; // Update user points in UI
+        });
+      }
     });
   }
 
@@ -433,6 +501,14 @@ class _TaskPage extends State<TaskPage> {
             studyScore = userDoc.get('studyScore') ?? 0;
             meditateScore = userDoc.get('meditateScore') ?? 0;
 
+            // Fetch previously unlocked achievements
+            List<dynamic> unlockedAchievements = [];
+            final userData = userDoc.data();
+            if (userData != null && userData is Map<String, dynamic>) {
+              unlockedAchievements = userData['achievements'] ?? [];
+            }
+
+            // Checking exercise achievements
             for (var achievement in exercise_achievements) {
               String condition4 = achievement['condition'];
               achievement['progress'] = userDoc.get('${condition4}Score') ?? 0;
@@ -443,35 +519,72 @@ class _TaskPage extends State<TaskPage> {
               if (!achievement['unlocked'] &&
                   (achievement['progress'] ?? 0) >= achievement['target']) {
                 achievement['unlocked'] = true;
-                showAchievementNotification(achievement['name']);
+
+                if (!unlockedAchievements.contains(achievement['name'])) {
+                  // Update Firestore to mark the achievement as unlocked
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({
+                    'achievements': FieldValue.arrayUnion([achievement['name']])
+                  });
+
+                  // Show success message for new achievements
+                  showAchievementNotification(achievement['name']);
+                }
               }
             }
 
+            // Checking study achievements
             for (var achievement in study_achievements) {
               String condition5 = achievement['condition'];
               achievement['progress'] = userDoc.get('${condition5}Score') ?? 0;
 
-              print("Checking exercise achievement: ${achievement['name']}, "
+              print("Checking study achievement: ${achievement['name']}, "
                   "Progress: ${achievement['progress']}, Target: ${achievement['target']}");
 
               if (!achievement['unlocked'] &&
                   (achievement['progress'] ?? 0) >= achievement['target']) {
                 achievement['unlocked'] = true;
-                showAchievementNotification(achievement['name']);
+
+                if (!unlockedAchievements.contains(achievement['name'])) {
+                  // Update Firestore to mark the achievement as unlocked
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({
+                    'achievements': FieldValue.arrayUnion([achievement['name']])
+                  });
+
+                  // Show success message for new achievements
+                  showAchievementNotification(achievement['name']);
+                }
               }
             }
 
+            // Checking meditate achievements
             for (var achievement in meditate_achievements) {
-              String condition6 = achievement['condition'];
-              achievement['progress'] = userDoc.get('${condition6}Score') ?? 0;
+              achievement['progress'] = meditateScore;
 
-              print("Checking exercise achievement: ${achievement['name']}, "
+              print("Checking Meditation achievement: ${achievement['name']}, "
                   "Progress: ${achievement['progress']}, Target: ${achievement['target']}");
 
               if (!achievement['unlocked'] &&
                   (achievement['progress'] ?? 0) >= achievement['target']) {
                 achievement['unlocked'] = true;
-                showAchievementNotification(achievement['name']);
+
+                if (!unlockedAchievements.contains(achievement['name'])) {
+                  // Update Firestore to mark the achievement as unlocked
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({
+                    'achievements': FieldValue.arrayUnion([achievement['name']])
+                  });
+
+                  // Show success message for new achievements
+                  showAchievementNotification(achievement['name']);
+                }
               }
             }
 
@@ -483,7 +596,7 @@ class _TaskPage extends State<TaskPage> {
               String condition3 = achievement['condition3'];
               achievement['progress3'] = userDoc.get('${condition3}Score') ?? 0;
 
-              print("Checking achievement: ${achievement['name']}, "
+              print("Checking balance achievement: ${achievement['name']}, "
                   "Progress1: ${achievement['progress1']}/Target1: ${achievement['target1']}, "
                   "Progress2: ${achievement['progress2']}/Target2: ${achievement['target2']}, "
                   "Progress3: ${achievement['progress3']}/Target3: ${achievement['target3']}");
@@ -506,7 +619,19 @@ class _TaskPage extends State<TaskPage> {
                   condition2Met &&
                   condition3Met) {
                 achievement['unlocked'] = true;
-                showAchievementNotification(achievement['name']);
+
+                if (!unlockedAchievements.contains(achievement['name'])) {
+                  // Update Firestore to mark the achievement as unlocked
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
+                      .update({
+                    'achievements': FieldValue.arrayUnion([achievement['name']])
+                  });
+
+                  // Show success message for new achievements
+                  showAchievementNotification(achievement['name']);
+                }
               }
             }
           } else {
@@ -519,26 +644,30 @@ class _TaskPage extends State<TaskPage> {
     }
   }
 
-  void showAchievementNotification(String achievementName) {
-    print("Achievement Unlocked: $achievementName"); // Debug log
+  void showAchievementNotification(String achievementName) async {
+    try {
+      // Play success music asynchronously
+      _successSound.play(AssetSource('audio/success.mp3'));
 
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text("Achievement Unlocked!"),
-          content: Text("Congratulations! You've unlocked: $achievementName"),
+      // Show success popup
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Achievement Unlocked!'),
+          content: Text('Congratulations! You have unlocked: $achievementName'),
           actions: [
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
               },
-              child: const Text("OK"),
+              child: const Text('OK'),
             ),
           ],
-        );
-      },
-    );
+        ),
+      );
+    } catch (e) {
+      print("Error playing success music: $e");
+    }
   }
 
   @override
