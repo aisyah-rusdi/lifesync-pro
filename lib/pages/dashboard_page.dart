@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_firebase_project/pages/component/chart.dart';
-import 'package:flutter_firebase_project/pages/task_page.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_firebase_project/pages/developing feature/todolist.dart';
 
@@ -162,8 +161,7 @@ class _DashboardState extends State<Dashboard> {
                                   );
                                 },
                                 child: Container(
-                                  width: double
-                                      .infinity, // Makes the widget span the full width of its parent
+                                  width: double.infinity,
                                   padding: const EdgeInsets.all(15),
                                   decoration: BoxDecoration(
                                     color: const Color.fromARGB(
@@ -176,18 +174,28 @@ class _DashboardState extends State<Dashboard> {
                                         .collection('users')
                                         .doc(user.uid)
                                         .collection('todos')
-                                        .snapshots(), // Use snapshots for real-time updates
+                                        .where('completed',
+                                            isEqualTo:
+                                                false) // Only pending tasks
+                                        .snapshots(),
                                     builder: (context, snapshot) {
                                       if (!snapshot.hasData) {
                                         return const Center(
-                                            child: CircularProgressIndicator());
+                                          child: CircularProgressIndicator(),
+                                        );
                                       }
+
                                       final todos = snapshot.data!.docs
-                                          .map((doc) =>
-                                              doc.data()['taskName'] ??
-                                              'Unnamed Task')
+                                          .map((doc) {
+                                            final data = doc.data();
+                                            return data['taskName'] ??
+                                                'Unnamed Task';
+                                          })
                                           .take(3)
                                           .toList();
+
+                                      final hasMore =
+                                          snapshot.data!.docs.length > 3;
 
                                       return Column(
                                         crossAxisAlignment:
@@ -196,32 +204,37 @@ class _DashboardState extends State<Dashboard> {
                                           const Text(
                                             "To-Do List",
                                             style: TextStyle(
-                                                fontSize: 18,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
+                                              fontSize: 18,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
                                           ),
                                           const SizedBox(height: 5),
-                                          ...todos.map((todo) => Text(
-                                                "- $todo",
-                                                style: const TextStyle(
-                                                    fontSize: 14,
-                                                    color: Colors.white70),
-                                              )),
-                                          if (snapshot.data!.docs.isEmpty)
+                                          if (todos.isEmpty)
                                             const Text(
-                                              "Click here to add your todo list!",
+                                              "No pending tasks. Click here to add your todo list!",
                                               style: TextStyle(
-                                                  fontSize: 14,
-                                                  color: Colors.white54),
+                                                fontSize: 14,
+                                                color: Colors.white54,
+                                              ),
                                             )
-                                          else if (snapshot.data!.docs.length >
-                                              3)
-                                            const Text(
-                                              "+ more...",
-                                              style: TextStyle(
+                                          else ...[
+                                            ...todos.map((taskName) => Text(
+                                                  "- $taskName",
+                                                  style: const TextStyle(
+                                                    fontSize: 14,
+                                                    color: Colors.white70,
+                                                  ),
+                                                )),
+                                            if (hasMore)
+                                              const Text(
+                                                "+ more...",
+                                                style: TextStyle(
                                                   fontSize: 14,
-                                                  color: Colors.white54),
-                                            ),
+                                                  color: Colors.white54,
+                                                ),
+                                              ),
+                                          ],
                                         ],
                                       );
                                     },

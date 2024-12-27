@@ -104,28 +104,37 @@ class _ProfilePageState extends State<ProfilePage> {
         Map<String, dynamic> data = userDoc.data() as Map<String, dynamic>;
 
         // Check if the 'profileImage' field exists in the map
-        if (data.containsKey('profileImage')) {
+        if (data.containsKey('profileImage') && data['profileImage'] != null) {
           String? encodedImage = data['profileImage'];
-          if (encodedImage != null) {
+          if (encodedImage != null && encodedImage.isNotEmpty) {
             setState(() {
               _encodedImage = encodedImage;
               _image =
                   base64Decode(encodedImage); // Decode and display the image
             });
+          } else {
+            _setDefaultImage(); // Assign a default image
           }
         } else {
-          // If no profileImage exists, use a default or leave _image as null
-          setState(() {
-            _image = null; // Or set a default image
-          });
+          _setDefaultImage(); // Assign a default image
         }
+      } else {
+        _setDefaultImage(); // Handle case where user document doesn't exist
       }
     } catch (e) {
       print("Error fetching profile image: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error fetching profile image: $e')),
       );
+      _setDefaultImage(); // Assign a default image on error
     }
+  }
+
+// Helper function to set a default image
+  void _setDefaultImage() {
+    setState(() {
+      _image = null; // Use a default image in the UI if available
+    });
   }
 
   final user = FirebaseAuth.instance.currentUser!;

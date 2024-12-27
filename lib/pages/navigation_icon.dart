@@ -40,30 +40,39 @@ class _HomePageState extends State<HomePage> {
       ];
 
   void _listenToUserData() {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.exists) {
-        setState(() {
-          // Fetch and update user name
-          userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
+  FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .snapshots()
+      .listen((snapshot) {
+    if (snapshot.exists) {
+      setState(() {
+        // Fetch and update user name
+        userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
 
-          if (snapshot.data()!.containsKey('profileImage')) {
-            String? encodedImage = snapshot.get('profileImage');
-            if (encodedImage != null) {
-              _encodedImage = encodedImage;
-              _image =
-                  base64Decode(encodedImage); // Decode and update the image
-            }
+        if (snapshot.data()!.containsKey('profileImage')) {
+          String? encodedImage = snapshot.get('profileImage');
+          if (encodedImage != null && encodedImage.isNotEmpty) {
+            _encodedImage = encodedImage;
+            _image = base64Decode(encodedImage); // Decode and update the image
           } else {
-            _image = null;
+            _setDefaultImage(); // Assign a default image
           }
-        });
-      }
-    });
-  }
+        } else {
+          _setDefaultImage(); // Assign a default image
+        }
+      });
+    }
+  });
+}
+
+// Helper function to set a default image
+void _setDefaultImage() {
+  setState(() {
+    _image = null; // Use a default image in the UI if available
+  });
+}
+
 
   @override
   void initState() {

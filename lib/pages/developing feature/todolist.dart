@@ -16,6 +16,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
   final _firestore = FirebaseFirestore.instance;
   late User? _currentUser;
   List<Map<String, dynamic>> _toDoList = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -26,6 +27,11 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
   Future<void> _fetchToDoList() async {
     if (_currentUser != null) {
+      setState(() {
+        _isLoading = true;
+        _toDoList = []; // Clear the current list
+      });
+
       final snapshot = await _firestore
           .collection('users')
           .doc(_currentUser!.uid)
@@ -36,31 +42,58 @@ class _ToDoListPageState extends State<ToDoListPage> {
       final todayDate =
           "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
 
+      final newList = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final isDaily = data['daily'] ?? false;
+        final isCompleted = data['completed'] ?? false;
+
+        if (isDaily && isCompleted && data['date'] != todayDate) {
+          // Reset daily task to pending for today
+          doc.reference.update({
+            'completed': false,
+            'date': todayDate,
+          });
+          data['completed'] = false;
+          data['date'] = todayDate;
+        }
+
+        // Parse date and time into a DateTime object for sorting
+        DateTime? taskDateTime;
+        if (data['date'] != null && data['time'] != null) {
+          final dateParts = data['date'].split('-'); // Expecting DD-MM-YYYY
+          final timeParts = data['time'].split(':'); // Expecting HH:mm
+          taskDateTime = DateTime(
+            int.parse(dateParts[2]), // Year
+            int.parse(dateParts[1]), // Month
+            int.parse(dateParts[0]), // Day
+            int.parse(timeParts[0]), // Hour
+            int.parse(timeParts[1]), // Minute
+          );
+        }
+
+        return {
+          "id": doc.id,
+          "taskName": data['taskName'] ?? 'Unnamed Task',
+          "date": data['date'],
+          "time": data['time'],
+          "completed": data['completed'] ?? false,
+          "daily": data['daily'] ?? false,
+          "taskDateTime": taskDateTime,
+        };
+      }).toList();
+
+      // Sort tasks by nearest date and time
+      newList.sort((a, b) {
+        final dateTimeA = a['taskDateTime'] as DateTime?;
+        final dateTimeB = b['taskDateTime'] as DateTime?;
+        if (dateTimeA == null) return 1; // Null tasks go to the bottom
+        if (dateTimeB == null) return -1;
+        return dateTimeA.compareTo(dateTimeB);
+      });
+
       setState(() {
-        _toDoList = snapshot.docs.map((doc) {
-          final data = doc.data();
-          final isDaily = data['daily'] ?? false;
-          final isCompleted = data['completed'] ?? false;
-
-          if (isDaily && isCompleted && data['date'] != todayDate) {
-            // Reset daily task to pending for today
-            doc.reference.update({
-              'completed': false,
-              'date': todayDate,
-            });
-            data['completed'] = false;
-            data['date'] = todayDate;
-          }
-
-          return {
-            "id": doc.id,
-            "taskName": data['taskName'] ?? 'Unnamed Task',
-            "date": data['date'],
-            "time": data['time'],
-            "completed": data['completed'] ?? false,
-            "daily": data['daily'] ?? false,
-          };
-        }).toList();
+        _toDoList = newList;
+        _isLoading = false;
       });
     }
   }
@@ -448,72 +481,76 @@ class _ToDoListPageState extends State<ToDoListPage> {
         title: Text('To-Do List'),
         centerTitle: true,
       ),
-      body: _toDoList.isEmpty
+      body: _isLoading
           ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: const [
-                  Icon(Icons.check_circle_outline,
-                      size: 100, color: Colors.grey),
-                  SizedBox(height: 20),
-                  Text(
-                    "No tasks added",
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                ],
-              ),
+              child: CircularProgressIndicator(),
             )
-          : ListView(
-              padding: EdgeInsets.all(16),
-              children: [
-                // Pending Daily Tasks Section
-                if (pendingDailyTasks.isNotEmpty) ...[
-                  Text(
-                    "Pending Tasks (Daily)",
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue),
+          : _toDoList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.check_circle_outline,
+                          size: 100, color: Colors.grey),
+                      SizedBox(height: 20),
+                      Text(
+                        "No tasks added",
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
+                      ),
+                    ],
                   ),
-                  SizedBox(height: 10),
-                  ...pendingDailyTasks.map((task) {
-                    return _buildTaskCard(task);
-                  }).toList(),
-                ],
+                )
+              : ListView(
+                  padding: EdgeInsets.all(16),
+                  children: [
+                    // Pending Daily Tasks Section
+                    if (pendingDailyTasks.isNotEmpty) ...[
+                      Text(
+                        "Pending Tasks (Daily)",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue),
+                      ),
+                      SizedBox(height: 10),
+                      ...pendingDailyTasks.map((task) {
+                        return _buildTaskCard(task);
+                      })
+                    ],
 
-                // Pending Custom Tasks Section
-                if (pendingCustomTasks.isNotEmpty) ...[
-                  SizedBox(height: 20),
-                  Text(
-                    "Pending Tasks (Custom)",
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.orange),
-                  ),
-                  SizedBox(height: 10),
-                  ...pendingCustomTasks.map((task) {
-                    return _buildTaskCard(task);
-                  }).toList(),
-                ],
+                    // Pending Custom Tasks Section
+                    if (pendingCustomTasks.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        "Pending Tasks (Custom)",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange),
+                      ),
+                      SizedBox(height: 10),
+                      ...pendingCustomTasks.map((task) {
+                        return _buildTaskCard(task);
+                      })
+                    ],
 
-                // Completed Tasks Section
-                if (completedTasks.isNotEmpty) ...[
-                  SizedBox(height: 20),
-                  Text(
-                    "Completed Tasks",
-                    style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.green),
-                  ),
-                  SizedBox(height: 10),
-                  ...completedTasks.map((task) {
-                    return _buildTaskCard(task, completed: true);
-                  }).toList(),
-                ],
-              ],
-            ),
+                    // Completed Tasks Section
+                    if (completedTasks.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        "Completed Tasks",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green),
+                      ),
+                      SizedBox(height: 10),
+                      ...completedTasks.map((task) {
+                        return _buildTaskCard(task, completed: true);
+                      })
+                    ],
+                  ],
+                ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddTaskDialog,
         child: Icon(Icons.add),
