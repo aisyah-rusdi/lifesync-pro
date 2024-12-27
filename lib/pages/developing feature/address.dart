@@ -1,3 +1,4 @@
+// AddressPage
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -6,8 +7,13 @@ import 'payment.dart'; // Import PaymentPage for navigation
 class AddressPage extends StatefulWidget {
   final int totalPriceInCents;
   final int userPoints;
+  final int totalPoints;
 
-  AddressPage({required this.totalPriceInCents, required this.userPoints});
+  AddressPage({
+    required this.totalPriceInCents,
+    required this.userPoints,
+    required this.totalPoints,
+  });
 
   @override
   _AddressPageState createState() => _AddressPageState();
@@ -76,12 +82,37 @@ class _AddressPageState extends State<AddressPage> {
 
   // Set an address as default
   void _setDefaultAddress(String addressId) {
+    FirebaseFirestore.instance.collection("addresses").get().then((snapshot) {
+      for (var doc in snapshot.docs) {
+        FirebaseFirestore.instance
+            .collection("addresses")
+            .doc(doc.id)
+            .update({'isDefault': doc.id == addressId});
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Address set as default.')),
+    );
+    _loadAddresses();
+  }
+
+  // Remove an address
+  void _removeAddress(String addressId) {
+    FirebaseFirestore.instance.collection("addresses").doc(addressId).delete();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Address removed successfully.')),
+    );
+    _loadAddresses();
+  }
+
+  // Unstar the default address
+  void _unsetDefaultAddress(String addressId) {
     FirebaseFirestore.instance
         .collection("addresses")
         .doc(addressId)
-        .update({'isDefault': true});
+        .update({'isDefault': false});
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Address set as default.')),
+      SnackBar(content: Text('Default address unset.')),
     );
     _loadAddresses();
   }
@@ -94,6 +125,7 @@ class _AddressPageState extends State<AddressPage> {
         builder: (context) => PaymentPage(
           totalPriceInCents: widget.totalPriceInCents,
           userPoints: widget.userPoints,
+          totalPoints: widget.totalPoints,
           address: selectedAddress,
         ),
       ),
@@ -112,7 +144,6 @@ class _AddressPageState extends State<AddressPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Display list of addresses
             Expanded(
               child: ListView.builder(
                 itemCount: addresses.length,
@@ -122,21 +153,50 @@ class _AddressPageState extends State<AddressPage> {
                   return Card(
                     margin: EdgeInsets.only(bottom: 10),
                     elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
                     child: ListTile(
-                      title: Text(address['Address'] ?? 'No address'),
-                      subtitle: Text(
-                        'Phone: ${address['Phone'] ?? 'No phone'}\nEmail: ${address['Email'] ?? 'No email'}',
+                      contentPadding: EdgeInsets.all(16),
+                      title: Text(
+                        address['Address'] ?? 'No address',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                       ),
-                      trailing: isDefault
-                          ? Icon(Icons.star, color: Colors.yellow)
-                          : IconButton(
-                              icon: Icon(Icons.star_border),
-                              onPressed: () {
-                                _setDefaultAddress(address['id']);
-                              },
+                      subtitle: Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(
+                          'Phone: ${address['Phone'] ?? 'No phone'}\nEmail: ${address['Email'] ?? 'No email'}',
+                          style: TextStyle(fontSize: 14),
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: Icon(
+                              isDefault ? Icons.star : Icons.star_border,
+                              color: isDefault ? Colors.yellow : Colors.grey,
                             ),
+                            onPressed: () {
+                              if (isDefault) {
+                                _unsetDefaultAddress(address['id']);
+                              } else {
+                                _setDefaultAddress(address['id']);
+                              }
+                            },
+                          ),
+                          IconButton(
+                            icon: Icon(Icons.delete, color: Colors.red),
+                            onPressed: () {
+                              _removeAddress(address['id']);
+                            },
+                          ),
+                        ],
+                      ),
                       onTap: () {
-                        // Proceed to payment with selected address
                         _proceedToPayment(address);
                       },
                     ),
@@ -144,16 +204,23 @@ class _AddressPageState extends State<AddressPage> {
                 },
               ),
             ),
-            // Button to add new address
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                _showAddAddressDialog(context);
-              },
-              child: Text('Add New Address'),
-              style: ElevatedButton.styleFrom(
-                padding: EdgeInsets.symmetric(vertical: 15.0),
-                textStyle: TextStyle(fontSize: 18),
+            Align(
+              alignment: Alignment.center,
+              child: ElevatedButton(
+                onPressed: () {
+                  _showAddAddressDialog(context);
+                },
+                child: Text('New Address'),
+                style: ElevatedButton.styleFrom(
+                  padding:
+                      EdgeInsets.symmetric(vertical: 15.0, horizontal: 25.0),
+                  textStyle: TextStyle(fontSize: 18),
+                  foregroundColor: Colors.purple,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
               ),
             ),
           ],
@@ -168,22 +235,39 @@ class _AddressPageState extends State<AddressPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text('Add New Address'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+          title: Text(
+            'Add New Address',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: addressController,
-                decoration: InputDecoration(labelText: 'Address'),
+                decoration: InputDecoration(
+                  labelText: 'Address',
+                  border: OutlineInputBorder(),
+                ),
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: phoneController,
-                decoration: InputDecoration(labelText: 'Phone Number'),
+                decoration: InputDecoration(
+                  labelText: 'Phone Number',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.phone,
               ),
+              SizedBox(height: 10),
               TextField(
                 controller: emailController,
-                decoration: InputDecoration(labelText: 'Email'),
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  border: OutlineInputBorder(),
+                ),
                 keyboardType: TextInputType.emailAddress,
               ),
             ],
@@ -193,14 +277,21 @@ class _AddressPageState extends State<AddressPage> {
               onPressed: () {
                 Navigator.pop(context);
               },
-              child: Text('Cancel'),
+              child: Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey),
+              ),
             ),
-            TextButton(
+            ElevatedButton(
               onPressed: () {
                 _saveAddress();
                 Navigator.pop(context);
               },
               child: Text('Save'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color.fromARGB(255, 235, 203, 241),
+                textStyle: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
           ],
         );

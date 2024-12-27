@@ -7,17 +7,20 @@ class PaymentPage extends StatelessWidget {
   final int totalPriceInCents;
   final int userPoints;
   final Map<String, dynamic> address;
-
+  final int totalPoints;
   PaymentPage({
     required this.totalPriceInCents,
     required this.userPoints,
+    required this.totalPoints,
     required this.address,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve user phone number from address data
+    // Retrieve user details from address data
     String userPhoneNumber = address['Phone'] ?? 'No phone number';
+    String userAddress = address['Address'] ?? 'No address';
+    String userEmail = address['Email'] ?? 'No email';
 
     return Scaffold(
       appBar: AppBar(
@@ -27,34 +30,86 @@ class PaymentPage extends StatelessWidget {
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              'Total Price: RM${(totalPriceInCents / 100).toStringAsFixed(2)}',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              padding: EdgeInsets.all(16.0),
+              margin: EdgeInsets.only(bottom: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Total Price:',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  SizedBox(height: 8.0),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'RM${(totalPriceInCents / 100).toStringAsFixed(2)}',
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green),
+                      ),
+                      Text(
+                        'Points Required: $totalPoints pts',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: const Color.fromARGB(255, 79, 206, 72)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
-            SizedBox(height: 30),
-            Text('Select Payment Method:', style: TextStyle(fontSize: 18)),
-            SizedBox(height: 20),
-            // Display user phone number
-            Text(
-              'User Phone Number: $userPhoneNumber',
-              style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.grey[400]!),
+              ),
+              padding: EdgeInsets.all(16.0),
+              margin: EdgeInsets.only(bottom: 20.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'User Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.purple,
+                    ),
+                  ),
+                  SizedBox(height: 10),
+                  Text('Address: $userAddress', style: TextStyle(fontSize: 16)),
+                  Text('Phone: $userPhoneNumber',
+                      style: TextStyle(fontSize: 16)),
+                  Text('Email: $userEmail', style: TextStyle(fontSize: 16)),
+                ],
+              ),
             ),
+            Text('Select Payment Method:',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             SizedBox(height: 20),
             PaymentOptionButton(
               icon: Icons.money,
               label: 'Duitnow QR',
               onPressed: () {
-                // Pass both totalPrice and userPhoneNumber to DuitnowQRPage
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => DuitnowQRPage(
-                      totalPrice:
-                          totalPriceInCents / 100.0, // Ensure it's a double
-                      userPhoneNumber: userPhoneNumber, // Pass the phone number
+                      totalPrice: totalPriceInCents / 100.0,
+                      userPhoneNumber: userPhoneNumber,
                     ),
                   ),
                 );
@@ -68,8 +123,8 @@ class PaymentPage extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => TouchNGoQRPage(
-                      totalPrice:
-                          totalPriceInCents / 100.0, // Pass double here as well
+                      totalPrice: totalPriceInCents / 100.0,
+                      userPhoneNumber: userPhoneNumber,
                     ),
                   ),
                 );
@@ -85,6 +140,7 @@ class PaymentPage extends StatelessWidget {
                     builder: (context) => PointDeductionPage(
                       totalPriceInCents: totalPriceInCents,
                       userPoints: userPoints,
+                      totalPoints: totalPoints,
                     ),
                   ),
                 );
@@ -119,6 +175,10 @@ class PaymentOptionButton extends StatelessWidget {
         style: ElevatedButton.styleFrom(
           padding: EdgeInsets.symmetric(vertical: 15.0, horizontal: 20.0),
           textStyle: TextStyle(fontSize: 18),
+          iconColor: Colors.purple,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       ),
     );

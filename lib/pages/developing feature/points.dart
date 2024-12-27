@@ -3,12 +3,16 @@ import 'package:flutter/material.dart';
 class PointDeductionPage extends StatelessWidget {
   final int totalPriceInCents;
   final int userPoints;
-
-  PointDeductionPage({required this.totalPriceInCents, required this.userPoints});
+  final int totalPoints;
+  PointDeductionPage(
+      {required this.totalPriceInCents,
+      required this.userPoints,
+      required this.totalPoints});
 
   @override
   Widget build(BuildContext context) {
-    int totalPriceInPoints = (totalPriceInCents / 100).ceil(); // Assume 1 point = RM1
+    int totalPriceInPoints =
+        (totalPriceInCents / 100).ceil(); // Assume 1 point = RM1
 
     return Scaffold(
       appBar: AppBar(
@@ -22,7 +26,7 @@ class PointDeductionPage extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Total Cost in Points: $totalPriceInPoints points',
+              'Total Cost in Points: $totalPoints points',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             SizedBox(height: 20),
