@@ -187,15 +187,48 @@ class _DashboardState extends State<Dashboard> {
                                         );
                                       }
 
+                                      final now = DateTime.now();
+
                                       final todos = snapshot.data!.docs
                                           .map((doc) {
                                             final data = doc.data();
-                                            return data['taskName'] ??
-                                                'Unnamed Task';
+                                            final date = data['date']
+                                                as String?; // Assuming "DD-MM-YYYY"
+                                            final time = data['time']
+                                                as String?; // Assuming "HH:mm"
+
+                                            DateTime? dateTime;
+                                            if (date != null && time != null) {
+                                              final dateParts = date.split('-');
+                                              final timeParts = time.split(':');
+                                              dateTime = DateTime(
+                                                int.parse(dateParts[2]), // Year
+                                                int.parse(
+                                                    dateParts[1]), // Month
+                                                int.parse(dateParts[0]), // Day
+                                                int.parse(timeParts[0]), // Hour
+                                                int.parse(
+                                                    timeParts[1]), // Minute
+                                              );
+                                            }
+
+                                            return {
+                                              'taskName': data['taskName'] ??
+                                                  'Unnamed Task',
+                                              'dateTime': dateTime,
+                                            };
                                           })
-                                          .take(3)
+                                          .where((todo) =>
+                                              todo['dateTime'] != null)
                                           .toList();
 
+                                      // Sort tasks by `dateTime`
+                                      todos.sort((a, b) =>
+                                          (a['dateTime'] as DateTime).compareTo(
+                                              b['dateTime'] as DateTime));
+
+                                      // Take the first 3 tasks
+                                      final topTodos = todos.take(3).toList();
                                       final hasMore =
                                           snapshot.data!.docs.length > 3;
 
@@ -212,7 +245,7 @@ class _DashboardState extends State<Dashboard> {
                                             ),
                                           ),
                                           const SizedBox(height: 5),
-                                          if (todos.isEmpty)
+                                          if (topTodos.isEmpty)
                                             const Text(
                                               "No pending tasks. Click here to add your todo list!",
                                               style: TextStyle(
@@ -220,23 +253,20 @@ class _DashboardState extends State<Dashboard> {
                                                 color: Colors.white54,
                                               ),
                                             )
-                                          else ...[
-                                            ...todos.map((taskName) => Text(
-                                                  "- $taskName",
+                                          else
+                                            ...topTodos.map((todo) => Text(
+                                                  "- ${todo['taskName']}",
                                                   style: const TextStyle(
                                                     fontSize: 14,
                                                     color: Colors.white70,
                                                   ),
                                                 )),
-                                            if (hasMore)
-                                              const Text(
-                                                "+ more...",
+                                          if (hasMore)
+                                            const Text("+ more...",
                                                 style: TextStyle(
                                                   fontSize: 14,
                                                   color: Colors.white54,
-                                                ),
-                                              ),
-                                          ],
+                                                ))
                                         ],
                                       );
                                     },

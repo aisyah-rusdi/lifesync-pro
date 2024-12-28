@@ -676,7 +676,7 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             IconButton(
                               onPressed: () => editName(),
-                              icon: const Icon(Icons.edit),
+                              icon: const Icon(Icons.edit, color: Colors.blue),
                               tooltip: 'Edit Name',
                             ),
                           ],
@@ -710,7 +710,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: ListTile(
                         title: Text('${edit.label}: ${edit.value}'),
                         trailing: IconButton(
-                          icon: Icon(Icons.edit),
+                          icon: Icon(Icons.edit, color: Colors.blue),
                           onPressed: () {
                             if (edit.label == 'Height') {
                               editInfo('height',
