@@ -100,7 +100,7 @@ class _StorePageState extends State<StorePage> {
               children: [
                 _buildStoreItem(
                     'Cool Sunglasses', 10, 'assets/images/sunglasses.png', 500),
-                _buildStoreItem('Trendy Hat', 15, 'assets/images/hat.jpg', 800),
+                _buildStoreItem('Trendy Hat', 15, 'assets/images/hat.png', 800),
                 _buildStoreItem('Inhaler', 5, 'assets/images/inhaler.jpg', 300),
                 _buildStoreItem(
                     'Energy Drink', 18, 'assets/images/drink.png', 1000),
