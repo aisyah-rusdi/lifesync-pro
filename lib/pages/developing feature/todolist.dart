@@ -3,7 +3,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter_firebase_project/pages/todo_box.dart';
 
 class ToDoListPage extends StatefulWidget {
   const ToDoListPage({Key? key}) : super(key: key);
@@ -17,6 +16,7 @@ class _ToDoListPageState extends State<ToDoListPage> {
   final _firestore = FirebaseFirestore.instance;
   late User? _currentUser;
   List<Map<String, dynamic>> _toDoList = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -27,36 +27,107 @@ class _ToDoListPageState extends State<ToDoListPage> {
 
   Future<void> _fetchToDoList() async {
     if (_currentUser != null) {
+      setState(() {
+        _isLoading = true;
+        _toDoList = []; // Clear the current list
+      });
+
       final snapshot = await _firestore
           .collection('users')
           .doc(_currentUser!.uid)
           .collection('todos')
-          .orderBy('dateTime')
           .get();
+
+      final now = DateTime.now();
+      final todayDate =
+          "${now.day.toString().padLeft(2, '0')}-${now.month.toString().padLeft(2, '0')}-${now.year}";
+
+      final newList = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final isDaily = data['daily'] ?? false;
+        final isCompleted = data['completed'] ?? false;
+
+        if (isDaily && isCompleted && data['date'] != todayDate) {
+          // Reset daily task to pending for today
+          doc.reference.update({
+            'completed': false,
+            'date': todayDate,
+          });
+          data['completed'] = false;
+          data['date'] = todayDate;
+        }
+
+        // Parse date and time into a DateTime object for sorting
+        DateTime? taskDateTime;
+        if (data['date'] != null && data['time'] != null) {
+          final dateParts = data['date'].split('-'); // Expecting DD-MM-YYYY
+          final timeParts = data['time'].split(':'); // Expecting HH:mm
+          taskDateTime = DateTime(
+            int.parse(dateParts[2]), // Year
+            int.parse(dateParts[1]), // Month
+            int.parse(dateParts[0]), // Day
+            int.parse(timeParts[0]), // Hour
+            int.parse(timeParts[1]), // Minute
+          );
+        }
+
+        return {
+          "id": doc.id,
+          "taskName": data['taskName'] ?? 'Unnamed Task',
+          "date": data['date'],
+          "time": data['time'],
+          "completed": data['completed'] ?? false,
+          "daily": data['daily'] ?? false,
+          "taskDateTime": taskDateTime,
+        };
+      }).toList();
+
+      // Sort tasks by nearest date and time
+      newList.sort((a, b) {
+        final dateTimeA = a['taskDateTime'] as DateTime?;
+        final dateTimeB = b['taskDateTime'] as DateTime?;
+        if (dateTimeA == null) return 1; // Null tasks go to the bottom
+        if (dateTimeB == null) return -1;
+        return dateTimeA.compareTo(dateTimeB);
+      });
+
       setState(() {
-        _toDoList = snapshot.docs.map((doc) {
-          final data = doc.data();
-          return {
-            "id": doc.id,
-            "taskName": data['taskName'] ?? 'Unnamed Task',
-            "dateTime": (data['dateTime'] as Timestamp).toDate(),
-            "completed": data['completed'] ?? false,
-          };
-        }).toList();
+        _toDoList = newList;
+        _isLoading = false;
       });
     }
   }
 
-  Future<void> _addTask(String taskName, String? dateTime) async {
-    if (_currentUser != null && taskName.isNotEmpty && dateTime != null) {
+  Future<void> _addTask(
+      String taskName, String date, String time, bool isDaily) async {
+    if (_currentUser != null && taskName.isNotEmpty) {
       await _firestore
           .collection('users')
           .doc(_currentUser!.uid)
           .collection('todos')
           .add({
         'taskName': taskName,
-        'dateTime': Timestamp.fromDate(DateTime.parse(dateTime)),
+        'date': date,
+        'time': time,
         'completed': false,
+        'daily': isDaily,
+      });
+      _fetchToDoList();
+    }
+  }
+
+  Future<void> _editTask(
+      String taskId, String taskName, String date, String time) async {
+    if (_currentUser != null) {
+      await _firestore
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .collection('todos')
+          .doc(taskId)
+          .update({
+        'taskName': taskName,
+        'date': date,
+        'time': time,
       });
       _fetchToDoList();
     }
@@ -87,181 +158,442 @@ class _ToDoListPageState extends State<ToDoListPage> {
   }
 
   void _showAddTaskDialog() {
+    final _formKey = GlobalKey<FormState>(); // Form key for validation
     final taskController = TextEditingController();
-    final yearController = TextEditingController();
-    final monthController = TextEditingController();
-    final dayController = TextEditingController();
-    final hourController = TextEditingController();
-    final minuteController = TextEditingController();
+    DateTime now = DateTime.now(); // Current date and time
+    DateTime? selectedDate = DateTime.now(); // Default selected date
+    TimeOfDay? selectedTime = TimeOfDay.now(); // Default selected time
+    bool isDailyTask = false;
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Add New Task"),
-        content: SingleChildScrollView(
-          child: Column(
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15), // Rounded dialog corners
+          ),
+          title: Center(
+            child: Text(
+              "Add New Task",
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+          ),
+          content: Form(
+            key: _formKey, // Attach form key
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Task Name Input
+                TextFormField(
+                  controller: taskController,
+                  maxLength: 20, // Limit to 20 characters
+                  decoration: InputDecoration(
+                    hintText: "Enter task name",
+                    labelText: "Task Name",
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return "Task name is required";
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 10),
+                // Date Picker
+                ListTile(
+                  title: Text(
+                    "Select Date: ${selectedDate!.day.toString().padLeft(2, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.year}",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  trailing: Icon(Icons.calendar_today, color: Colors.blue),
+                  onTap: () async {
+                    final pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate ?? DateTime.now(),
+                      firstDate: DateTime.now(), // Today and onward
+                      lastDate: DateTime(2100),
+                    );
+                    if (pickedDate != null) {
+                      setState(() {
+                        selectedDate = pickedDate;
+                      });
+                    }
+                  },
+                ),
+                SizedBox(height: 10),
+                // Time Picker
+                ListTile(
+                  title: Text(
+                    "Select Time: ${selectedTime!.format(context)}",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  trailing: Icon(Icons.access_time, color: Colors.blue),
+                  onTap: () async {
+                    final pickedTime = await showTimePicker(
+                      context: context,
+                      initialTime: selectedTime ?? TimeOfDay.now(),
+                    );
+                    if (pickedTime != null) {
+                      // Validate time
+                      final selectedDateTime = DateTime(
+                        selectedDate!.year,
+                        selectedDate!.month,
+                        selectedDate!.day,
+                        pickedTime.hour,
+                        pickedTime.minute,
+                      );
+
+                      if (selectedDateTime.isBefore(now)) {
+                        // Show error if selected time is in the past
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("You cannot select a past time."),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
+                      } else {
+                        // Valid time
+                        setState(() {
+                          selectedTime = pickedTime;
+                        });
+                      }
+                    }
+                  },
+                ),
+                ListTile(
+                  title: Text(
+                    "Set as Daily Task",
+                    style: TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                  trailing: Checkbox(
+                    value: isDailyTask,
+                    onChanged: (value) {
+                      setState(() {
+                        isDailyTask = value ?? false;
+                      });
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            // Cancel Button
+            OutlinedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Cancel"),
+            ),
+            // Add Task Button
+            ElevatedButton(
+              onPressed: () {
+                if (_formKey.currentState!.validate()) {
+                  // Validation passed
+                  if (selectedDate != null && selectedTime != null) {
+                    final formattedDate =
+                        "${selectedDate!.day.toString().padLeft(2, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.year}";
+                    final formattedTime =
+                        "${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}";
+                    _addTask(taskController.text.trim(), formattedDate,
+                        formattedTime, isDailyTask);
+                  }
+                  Navigator.of(context).pop();
+                }
+              },
+              child: Text("Add"),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditTaskDialog(String taskId, String currentTaskName,
+      String? currentDate, String? currentTime) {
+    final taskController = TextEditingController(text: currentTaskName);
+    DateTime now = DateTime.now();
+
+    // Parse the currentDate string in "DD-MM-YYYY" format and ensure it's valid
+    DateTime? selectedDate;
+    if (currentDate != null) {
+      try {
+        selectedDate = DateTime(
+          int.parse(currentDate.split('-')[2]), // Year
+          int.parse(currentDate.split('-')[1]), // Month
+          int.parse(currentDate.split('-')[0]), // Day
+        );
+      } catch (e) {
+        selectedDate = now; // Fallback to today if parsing fails
+      }
+    } else {
+      selectedDate = now; // Default to today if currentDate is null
+    }
+
+    // Ensure selectedDate is not before now
+    if (selectedDate.isBefore(now)) {
+      selectedDate = now;
+    }
+
+    TimeOfDay? selectedTime = currentTime != null
+        ? TimeOfDay(
+            hour: int.parse(currentTime.split(":")[0]),
+            minute: int.parse(currentTime.split(":")[1]),
+          )
+        : TimeOfDay.now();
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text("Edit Task"),
+          content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
+              // Task Name Input
               TextField(
                 controller: taskController,
+                maxLength: 20,
                 decoration: InputDecoration(
                   hintText: "Enter task name",
                   border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: yearController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Year",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: TextField(
-                      controller: monthController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Month",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: TextField(
-                      controller: dayController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Day",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
+              // Date Picker
+              ListTile(
+                title: Text(
+                  "Select Date: ${selectedDate!.day.toString().padLeft(2, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.year}",
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                trailing: Icon(Icons.calendar_today),
+                onTap: () async {
+                  final pickedDate = await showDatePicker(
+                    context: context,
+                    initialDate: selectedDate ?? now,
+                    firstDate: now,
+                    lastDate: DateTime(2100),
+                  );
+                  if (pickedDate != null) {
+                    setState(() {
+                      selectedDate = pickedDate;
+                    });
+                  }
+                },
               ),
               SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: hourController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Hour (0-23)",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 5),
-                  Expanded(
-                    child: TextField(
-                      controller: minuteController,
-                      keyboardType: TextInputType.number,
-                      decoration: InputDecoration(
-                        hintText: "Minute (0-59)",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                ],
+              // Time Picker
+              ListTile(
+                title: Text(
+                    "Select Time: ${selectedTime?.format(context) ?? 'Not Selected'}"),
+                trailing: Icon(Icons.access_time),
+                onTap: () async {
+                  final pickedTime = await showTimePicker(
+                    context: context,
+                    initialTime: selectedTime ?? TimeOfDay.now(),
+                  );
+                  if (pickedTime != null) {
+                    final selectedDateTime = DateTime(
+                      selectedDate!.year,
+                      selectedDate!.month,
+                      selectedDate!.day,
+                      pickedTime.hour,
+                      pickedTime.minute,
+                    );
+                    if (selectedDateTime.isBefore(now)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("You cannot select a past time."),
+                        ),
+                      );
+                    } else {
+                      setState(() {
+                        selectedTime = pickedTime;
+                      });
+                    }
+                  }
+                },
               ),
             ],
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              try {
-                final int year = int.parse(yearController.text.trim());
-                final int month = int.parse(monthController.text.trim());
-                final int day = int.parse(dayController.text.trim());
-                final int hour = int.parse(hourController.text.trim());
-                final int minute = int.parse(minuteController.text.trim());
-
-                final dateTime =
-                    DateTime(year, month, day, hour, minute).toString();
-                _addTask(taskController.text.trim(), dateTime);
-
+          actions: [
+            // Cancel Button
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text("Cancel"),
+            ),
+            // Save Button
+            TextButton(
+              onPressed: () {
+                if (taskController.text.trim().isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Task name cannot be empty.")),
+                  );
+                  return;
+                }
+                if (selectedDate != null && selectedTime != null) {
+                  final formattedDate =
+                      "${selectedDate!.day.toString().padLeft(2, '0')}-${selectedDate!.month.toString().padLeft(2, '0')}-${selectedDate!.year}";
+                  final formattedTime =
+                      "${selectedTime!.hour.toString().padLeft(2, '0')}:${selectedTime!.minute.toString().padLeft(2, '0')}";
+                  _editTask(taskId, taskController.text.trim(), formattedDate,
+                      formattedTime);
+                }
                 Navigator.of(context).pop();
-              } catch (e) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("Error: ${e.toString()}")),
-                );
-              }
-            },
-            child: Text("Add"),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: Text("Cancel"),
-          ),
-        ],
+              },
+              child: Text("Save"),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    // Parse the custom date format into DateTime
+    DateTime _parseDateTime(String date, String time) {
+      final dateParts = date.split('-');
+      final timeParts = time.split(':');
+
+      // Assuming date format is DD-MM-YYYY and time format is HH:mm
+      return DateTime(
+        int.parse(dateParts[2]), // Year
+        int.parse(dateParts[1]), // Month
+        int.parse(dateParts[0]), // Day
+        int.parse(timeParts[0]), // Hour
+        int.parse(timeParts[1]), // Minute
+      );
+    }
+
+    // Filter tasks into categories
+    final pendingDailyTasks =
+        _toDoList.where((task) => !task['completed'] && task['daily']).toList();
+    final pendingCustomTasks = _toDoList
+        .where((task) => !task['completed'] && !task['daily'])
+        .toList();
+    final completedTasks =
+        _toDoList.where((task) => task['completed']).toList();
+
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
+      appBar: AppBar(
+        title: Text('To-Do List'),
+        centerTitle: true,
+      ),
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : _toDoList.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: const [
+                      Icon(Icons.check_circle_outline,
+                          size: 100, color: Colors.grey),
+                      SizedBox(height: 20),
                       Text(
-                        'To-Do List',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.add),
-                        onPressed: _showAddTaskDialog,
+                        "No tasks added",
+                        style: TextStyle(fontSize: 18, color: Colors.grey),
                       ),
                     ],
                   ),
-                  SizedBox(height: 10),
-                  SizedBox(
-                    height: 500,
-                    child: ListView.builder(
-                      itemCount: _toDoList.length,
-                      itemBuilder: (context, index) {
-                        final task = _toDoList[index];
-                        return TodoBox(
-                          taskName: task['taskName'],
-                          taskCompleted: task['completed'],
-                          taskDateTime: task['dateTime'],
-                          onChanged: (value) {
-                            _toggleTaskCompletion(
-                                task['id'], task['completed']);
-                          },
-                          deleteFunction: () {
-                            _deleteTask(task['id']);
-                          },
-                          editFunction: () {
-                            _showAddTaskDialog();
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ],
+                )
+              : ListView(
+                  padding: EdgeInsets.all(16),
+                  children: [
+                    // Pending Daily Tasks Section
+                    if (pendingDailyTasks.isNotEmpty) ...[
+                      Text(
+                        "Pending Tasks (Daily)",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue),
+                      ),
+                      SizedBox(height: 10),
+                      ...pendingDailyTasks.map((task) {
+                        return _buildTaskCard(task);
+                      })
+                    ],
+
+                    // Pending Custom Tasks Section
+                    if (pendingCustomTasks.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        "Pending Tasks (Custom)",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange),
+                      ),
+                      SizedBox(height: 10),
+                      ...pendingCustomTasks.map((task) {
+                        return _buildTaskCard(task);
+                      })
+                    ],
+
+                    // Completed Tasks Section
+                    if (completedTasks.isNotEmpty) ...[
+                      SizedBox(height: 20),
+                      Text(
+                        "Completed Tasks",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.green),
+                      ),
+                      SizedBox(height: 10),
+                      ...completedTasks.map((task) {
+                        return _buildTaskCard(task, completed: true);
+                      })
+                    ],
+                  ],
+                ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showAddTaskDialog,
+        child: Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(Map<String, dynamic> task, {bool completed = false}) {
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 8),
+      child: ListTile(
+        title: Text(
+          task['taskName'],
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            decoration: completed ? TextDecoration.lineThrough : null,
+          ),
+        ),
+        subtitle: Text("Date: ${task['date']}, Time: ${task['time']}"),
+        leading: completed
+            ? null
+            : Checkbox(
+                value: task['completed'],
+                onChanged: (value) =>
+                    _toggleTaskCompletion(task['id'], task['completed']),
               ),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (!completed)
+              IconButton(
+                icon: Icon(Icons.edit, color: Colors.blue),
+                onPressed: () => _showEditTaskDialog(
+                  task['id'], // taskId
+                  task['taskName'], // currentTaskName
+                  task['date'], // currentDate
+                  task['time'], // currentTime
+                ),
+              ),
+            IconButton(
+              icon: Icon(Icons.delete, color: Colors.red),
+              onPressed: () => _deleteTask(task['id']),
             ),
           ],
         ),

@@ -5,103 +5,106 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/community.dart';
 import 'package:flutter_firebase_project/pages/dashboard_page.dart';
-//import 'package:flutter_firebase_project/pages/challenge_page.dart';
 import 'package:flutter_firebase_project/pages/leaderboard_page.dart';
 import 'package:flutter_firebase_project/pages/profile_page.dart';
 import 'package:flutter_firebase_project/pages/store_page.dart';
+import 'package:flutter_firebase_project/pages/task_page.dart';
 import 'dart:convert'; // For Base64 encoding/decoding
 import 'dart:typed_data';
 
-import 'package:flutter_firebase_project/pages/task_page.dart';
-
-class HomePage extends StatefulWidget{
-  const HomePage({Key ? key}) : super(key : key);
+class HomePage extends StatefulWidget {
+  const HomePage({Key? key}) : super(key: key);
 
   @override
   State<HomePage> createState() => _HomePageState();
-  }
+}
 
-  class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> {
+  final user = FirebaseAuth.instance.currentUser!;
+  int _selectedIndex = 0;
+  String? userName;
+  String? _encodedImage; // Holds the base64-encoded image string
+  Uint8List? _image; // Decoded image data for display
 
-    final user = FirebaseAuth.instance.currentUser!;
-    int _selectedIndex = 0;
-    String? userName;
-    String? _encodedImage; // Holds the base64-encoded image string
-    Uint8List? _image; // Decoded image data for display
-
-
-    void _navigateBottomBar(int index) {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
-
-    List<Widget>get _pages => [
-      Dashboard(),
-      //ChallengePage(),
-      //ToDoListPage(),
-      CommunityPage(),
-      LeaderboardPage(),
-      StorePage(),
-    ];
-
-    void _listenToUserData() {
-    FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .snapshots()
-        .listen((snapshot) {
-      if (snapshot.exists) {
-        setState(() {
-          // Fetch and update user name
-          userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
-
-          if (snapshot.data()!.containsKey('profileImage')) {
-            String? encodedImage = snapshot.get('profileImage');
-            if (encodedImage != null) {
-              _encodedImage = encodedImage;
-              _image =
-                  base64Decode(encodedImage); // Decode and update the image
-            }
-          } else {
-            _image = null;
-          }
-        });
-      }
+  void _navigateBottomBar(int index) {
+    setState(() {
+      _selectedIndex = index;
     });
   }
 
-@override
-void initState() {
-  super.initState();
-  _listenToUserData(); // Set up the listener
+  List<Widget> get _pages => [
+        Dashboard(),
+        CommunityPage(),
+        LeaderboardPage(),
+        StorePage(),
+      ];
+
+  void _listenToUserData() {
+  FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .snapshots()
+      .listen((snapshot) {
+    if (snapshot.exists) {
+      setState(() {
+        // Fetch and update user name
+        userName = 'Hi, ' + (snapshot.get('first name') ?? 'User') + ' ^^';
+
+        if (snapshot.data()!.containsKey('profileImage')) {
+          String? encodedImage = snapshot.get('profileImage');
+          if (encodedImage != null && encodedImage.isNotEmpty) {
+            _encodedImage = encodedImage;
+            _image = base64Decode(encodedImage); // Decode and update the image
+          } else {
+            _setDefaultImage(); // Assign a default image
+          }
+        } else {
+          _setDefaultImage(); // Assign a default image
+        }
+      });
+    }
+  });
+}
+
+// Helper function to set a default image
+void _setDefaultImage() {
+  setState(() {
+    _image = null; // Use a default image in the UI if available
+  });
 }
 
 
-    @override
-    Widget build(BuildContext context) {
-      return Scaffold(
-        appBar: AppBar(
-          title: Row(
+  @override
+  void initState() {
+    super.initState();
+    _listenToUserData(); // Set up the listener
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-      // Left side with profile icon and welcoming text
-      Row(
-        children: [
-          GestureDetector(
-            onTap: () {
-              // Ensure context is correctly passed to Navigator
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (context) => ProfilePage()),
-              );
-            },
-            child: _image != null
-                ? CircleAvatar(
-                    backgroundImage: MemoryImage(_image!),
-                    radius: 25,
-                  ) // Display the profile image
-                : Icon(Icons.account_circle, size: 35), // Profile icon
-            ),
+            // Left side with profile icon and welcoming text
+            Row(
+              children: [
+                GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ProfilePage(),
+                        ),
+                      );
+                    },
+                    child: _image != null
+                        ? CircleAvatar(
+                            backgroundImage: MemoryImage(_image!),
+                            radius: 25,
+                          ) // Display the profile image
+                        : Icon(Icons.account_circle, size: 35)), // Profile icon
                 SizedBox(width: 8), // Spacing between icon and text
                 Text(
                   userName ?? 'Welcome',
@@ -110,14 +113,10 @@ void initState() {
               ],
             ),
 
-    
-    
-    // Right side with points, notification, and profile icons
-    Row(
-      children: [
-        Icon(Icons.notifications, size: 30), // Notification icon
-        SizedBox(width: 8),
-        GestureDetector(
+            // Right side with points, notification, and profile icons
+            Row(
+              children: [
+                GestureDetector(
                   onTap: () {
                     // Show confirmation dialog
                     showDialog(
@@ -151,71 +150,64 @@ void initState() {
                     size: 30,
                   ),
                 )
-
               ],
             ),
           ],
         ),
-
         backgroundColor: const Color.fromARGB(255, 139, 190, 228),
-
-        ),
-
-        body: _pages[_selectedIndex],
-        
+      ),
+      body: _pages[_selectedIndex],
       floatingActionButton: SizedBox(
-          width: 100,
-          height: 100,
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 30.0),
-            child: FloatingActionButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const TaskPage()),
-                );
-              },
-              child: Icon(Icons.play_arrow, size: 50, color: Colors.white),
-              backgroundColor: Color.fromARGB(255, 254, 118, 108),
-              elevation: 12, // Adds a shadow for depth
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(40), // Rounded FAB
-              ),
+        width: 100,
+        height: 100,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 30.0),
+          child: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TaskPage()),
+              );
+            },
+            child: Icon(Icons.play_arrow, size: 50, color: Colors.white),
+            backgroundColor: Color.fromARGB(255, 254, 118, 108),
+            elevation: 12, // Adds a shadow for depth
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(40), // Rounded FAB
             ),
           ),
         ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-
-              
-        bottomNavigationBar: BottomNavigationBar(
-          currentIndex: _selectedIndex,
-          onTap: _navigateBottomBar,
-          type: BottomNavigationBarType.fixed, // Ensures equal spacing
-          backgroundColor: Colors.white, // Background color for contrast
-          selectedItemColor: Color.fromARGB(255, 254, 118, 108), // Active item color
-          unselectedItemColor: Colors.grey, // Inactive item color
-          showSelectedLabels: true,
-          showUnselectedLabels: false,
-          items: const [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home),
-              label: 'Home',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people),
-              label: 'Community',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.leaderboard),
-              label: 'Leaderboard',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.shopping_bag),
-              label: 'Store',
-            ),
-          ],
-        ),
-
-      );
-    }
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _navigateBottomBar,
+        type: BottomNavigationBarType.fixed, // Ensures equal spacing
+        backgroundColor: Colors.white, // Background color for contrast
+        selectedItemColor:
+            Color.fromARGB(255, 254, 118, 108), // Active item color
+        unselectedItemColor: Colors.grey, // Inactive item color
+        showSelectedLabels: true,
+        showUnselectedLabels: false,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Community',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.leaderboard),
+            label: 'Leaderboard',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_bag),
+            label: 'Store',
+          ),
+        ],
+      ),
+    );
   }
+}

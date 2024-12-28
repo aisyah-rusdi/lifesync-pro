@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class DuitnowQRPage extends StatelessWidget {
   final double totalPrice;
 
-  DuitnowQRPage({required this.totalPrice});
+  DuitnowQRPage({required this.totalPrice, required String userPhoneNumber});
 
   @override
   Widget build(BuildContext context) {

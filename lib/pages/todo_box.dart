@@ -1,88 +1,75 @@
-import 'package:flutter/material.dart';
+// ignore_for_file: sort_child_properties_last, prefer_const_constructors, must_be_immutable
 
-class TodoBox extends StatelessWidget {
+import 'package:flutter/material.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
+
+class TodoBox  extends StatelessWidget{
   final String taskName;
   final bool taskCompleted;
-  final DateTime taskDateTime;
-  final ValueChanged<bool?> onChanged;
-  final VoidCallback deleteFunction;
-  final VoidCallback editFunction;
+  final Function(bool?)? onChanged;
+  final Function(BuildContext)? deleteFunction;
+  final Function(BuildContext)? editFunction;
 
   const TodoBox({
-    Key? key,
+    super.key,
     required this.taskName,
     required this.taskCompleted,
-    required this.taskDateTime,
     required this.onChanged,
     required this.deleteFunction,
     required this.editFunction,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return Padding(
+      padding: const EdgeInsets.only(left: 15.0, right: 15.0, top: 15.0),
+      child: Slidable(
+        endActionPane: ActionPane(
+          motion: StretchMotion(), 
           children: [
-            Checkbox(
-              value: taskCompleted,
-              onChanged: onChanged,
+            SlidableAction(
+              onPressed: editFunction,
+              icon: Icons.edit,
+              backgroundColor: Colors.blue.shade300,
+              borderRadius: BorderRadius.circular(12),
             ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    taskName,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      decoration: taskCompleted
-                          ? TextDecoration.lineThrough
-                          : TextDecoration.none,
-                    ),
-                  ),
-                  SizedBox(height: 5),
-                  Text(
-                    'Due: ${_formatDateTime(taskDateTime)}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Column(
-              children: [
-                IconButton(
-                  icon: Icon(Icons.edit, color: Colors.blue),
-                  onPressed: editFunction,
+            SlidableAction(
+              onPressed: deleteFunction,
+              icon: Icons.delete,
+              backgroundColor: Colors.red.shade300,
+              borderRadius: BorderRadius.circular(12),
+              )
+            ],
+          ),
+
+        child: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.grey[300],
+            borderRadius: BorderRadius.circular(12),
+          ),
+        
+          child: Row(
+            children: [
+              Checkbox(
+                value: taskCompleted, 
+                onChanged: onChanged,
+                activeColor: Colors.black,
                 ),
-                IconButton(
-                  icon: Icon(Icons.delete, color: Colors.red),
-                  onPressed: deleteFunction,
-                ),
-              ],
-            ),
-          ],
+        
+                Text(
+                  taskName,
+                  style: TextStyle(
+                    decoration: taskCompleted
+                    ? TextDecoration.lineThrough 
+                    : TextDecoration.none,
+                  ),
+                )
+            ],
+          ),
+          
         ),
       ),
     );
-  }
-
-  /// Formats the DateTime into a readable string.
-  String _formatDateTime(DateTime dateTime) {
-    return '${dateTime.year}-${_twoDigits(dateTime.month)}-${_twoDigits(dateTime.day)} '
-        '${_twoDigits(dateTime.hour)}:${_twoDigits(dateTime.minute)}';
-  }
-
-  /// Ensures single-digit numbers are displayed as two digits (e.g., "1" -> "01").
-  String _twoDigits(int n) {
-    return n.toString().padLeft(2, '0');
   }
 }
