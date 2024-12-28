@@ -676,7 +676,10 @@ class _ProfilePageState extends State<ProfilePage> {
                             ),
                             IconButton(
                               onPressed: () => editName(),
-                              icon: const Icon(Icons.edit),
+                              icon: const Icon(
+                                Icons.edit,
+                                color: Colors.blue,
+                              ),
                               tooltip: 'Edit Name',
                             ),
                           ],
@@ -707,10 +710,17 @@ class _ProfilePageState extends State<ProfilePage> {
                     return Card(
                       elevation: 3,
                       shadowColor: Colors.black12,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        side: BorderSide(color: Colors.lightBlueAccent),
+                      ),
                       child: ListTile(
                         title: Text('${edit.label}: ${edit.value}'),
                         trailing: IconButton(
-                          icon: Icon(Icons.edit),
+                          icon: Icon(
+                            Icons.edit,
+                            color: Colors.blue,
+                          ),
                           onPressed: () {
                             if (edit.label == 'Height') {
                               editInfo('height',
