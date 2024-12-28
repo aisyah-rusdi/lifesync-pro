@@ -78,11 +78,13 @@ class _DashboardState extends State<Dashboard> {
                                         child: CircularProgressIndicator());
                                   }
                                   final userDoc = snapshot.data!;
-                                  final height =
-                                      (userDoc.get('height') ?? 0).toDouble();
-                                  final weight =
-                                      (userDoc.get('weight') ?? 0).toDouble();
-                                  double bmi = 0;
+                                  final height = double.tryParse(
+                                          userDoc.get('height').toString()) ??
+                                      0.0;
+                                  final weight = double.tryParse(
+                                          userDoc.get('weight').toString()) ??
+                                      0.0;
+                                  double bmi = 0.0;
                                   if (height > 0 && weight > 0) {
                                     bmi = weight /
                                         ((height / 100) * (height / 100));
