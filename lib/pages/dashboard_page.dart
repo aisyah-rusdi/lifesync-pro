@@ -353,42 +353,7 @@ class _DashboardState extends State<Dashboard> {
                   ],
                 ),
               );
-            }
-            /*floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-      floatingActionButton: SizedBox(
-        width: 100,
-        height: 100,
-        child: FloatingActionButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const TaskPage()),
-            );
-          },
-          child: const Icon(Icons.play_arrow, size: 60),
-          backgroundColor: const Color.fromARGB(255, 254, 118, 108),
-          shape: const CircleBorder(),
-          elevation: 10,
-        ),
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final userDoc = snapshot.data!;
-          final Map<String, int> taskScores = {
-            'Exercise': userDoc.get('exerciseScore') ?? 0,
-            'Study': userDoc.get('studyScore') ?? 0,
-            'Meditate': userDoc.get('meditateScore') ?? 0,
-          };*/
-
-            ));
+            }));
   }
 }
 

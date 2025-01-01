@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_firebase_project/pages/component/post_detail.dart';
-import 'package:flutter_firebase_project/pages/component/wall_post.dart';
+import 'package:flutter_firebase_project/pages/component/post_box.dart';
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({Key? key}) : super(key: key);
@@ -25,7 +25,7 @@ class _CommunityGroupPageState extends State<CommunityPage> {
   final List<String> categories = ['All', 'Study', 'Exercise', 'Entertainment']; // Categories for filter
   bool showUserPostsOnly = false; 
 
-  // Function to post a message to the shared "messages" collection
+  // Create a new collection named as message in firebase
   void postMessage() {
     if (activityNameController.text.isNotEmpty &&
         numPeopleController.text.isNotEmpty &&

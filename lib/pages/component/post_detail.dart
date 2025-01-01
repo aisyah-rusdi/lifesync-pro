@@ -34,12 +34,23 @@ class PostDetail extends StatefulWidget {
 }
 
 class _PostDetailState extends State<PostDetail> {
+  late String activityName;
   late String selectedCategory;
+  late int numPeople;
+  late String date;
+  late String time;
+  late String location;
 
   @override
   void initState() {
     super.initState();
-    selectedCategory = widget.category; // Initialize selectedCategory with the current category
+    // Initialize state variables with widget data
+    activityName = widget.activityName;
+    selectedCategory = widget.category;
+    numPeople = widget.numPeople;
+    date = widget.date;
+    time = widget.time;
+    location = widget.location;
   }
 
   @override
@@ -49,7 +60,7 @@ class _PostDetailState extends State<PostDetail> {
         borderRadius: BorderRadius.circular(15),
       ),
       title: Text(
-        widget.activityName,
+        activityName,
         style: Theme.of(context).textTheme.titleLarge?.copyWith(
               fontWeight: FontWeight.bold,
               color: Colors.blueAccent,
@@ -63,11 +74,11 @@ class _PostDetailState extends State<PostDetail> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildInfoRow("Category:", widget.category),
-              _buildInfoRow("Number of People:", widget.numPeople.toString()),
-              _buildInfoRow("Date:", widget.date),
-              _buildInfoRow("Time:", widget.time),
-              _buildInfoRow("Location:", widget.location),
+              _buildInfoRow("Category:", selectedCategory),
+              _buildInfoRow("Number of People:", numPeople.toString()),
+              _buildInfoRow("Date:", date),
+              _buildInfoRow("Time:", time),
+              _buildInfoRow("Location:", location),
               _buildInfoRow("Posted by:", widget.userEmail),
             ],
           ),
@@ -185,11 +196,11 @@ class _PostDetailState extends State<PostDetail> {
 
   // Method to show the edit dialog
   void _showEditDialog(BuildContext context) {
-    final activityNameController = TextEditingController(text: widget.activityName);
-    final numPeopleController = TextEditingController(text: widget.numPeople.toString());
-    final dateController = TextEditingController(text: widget.date);
-    final timeController = TextEditingController(text: widget.time);
-    final locationController = TextEditingController(text: widget.location);
+    final activityNameController = TextEditingController(text: activityName);
+    final numPeopleController = TextEditingController(text: numPeople.toString());
+    final dateController = TextEditingController(text: date);
+    final timeController = TextEditingController(text: time);
+    final locationController = TextEditingController(text: location);
 
     showDialog(
       context: context,
@@ -284,19 +295,26 @@ class _PostDetailState extends State<PostDetail> {
           ),
           ElevatedButton(
             onPressed: () {
-              // Collect updated data
-              final updatedData = {
-                'ActivityName': activityNameController.text,
-                'NumPeople': int.tryParse(numPeopleController.text) ?? 0,
-                'Category': selectedCategory, // Include selected category in the updated data
-                'Date': dateController.text,
-                'Time': timeController.text,
-                'Location': locationController.text,
-              };
-              widget.onEdit(updatedData); // Pass updated data to the onEdit callback
+              setState(() {
+                activityName = activityNameController.text;
+                numPeople = int.tryParse(numPeopleController.text) ?? 0;
+                date = dateController.text;
+                time = timeController.text;
+                location = locationController.text;
+              });
+
+              widget.onEdit({
+                'ActivityName': activityName,
+                'NumPeople': numPeople,
+                'Category': selectedCategory,
+                'Date': date,
+                'Time': time,
+                'Location': location,
+              });
+
               Navigator.pop(context); // Close the dialog
             },
-            child: const Text("Save Changes"),
+            child: const Text("Save"),
           ),
         ],
       ),

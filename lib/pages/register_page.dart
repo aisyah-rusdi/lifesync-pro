@@ -27,7 +27,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
-
+  // ABC
   // Focus nodes to track focus state
   final _firstNameFocusNode = FocusNode();
   final _lastNameFocusNode = FocusNode();
@@ -53,7 +53,7 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   void initState() {
     super.initState();
-
+    // ABC
     // Add listeners to handle focus changes
     _firstNameFocusNode.addListener(() {
       if (!_firstNameFocusNode.hasFocus) {
@@ -280,18 +280,35 @@ class _RegisterPageState extends State<RegisterPage> {
       showAlertDialog("Please fill in all the fields.");
       return false;
     }
-
+    // ABC
     if (!EmailValidator.validate(_emailController.text.trim())) {
       showAlertDialog("Please enter a valid email address.");
       return false;
     }
 
-    if (int.tryParse(_ageController.text.trim()) == null ||
-        double.tryParse(_weightController.text.trim()) == null ||
-        double.tryParse(_heightController.text.trim()) == null) {
-      showAlertDialog("Please enter valid values for age, weight, and height.");
-      return false;
-    }
+    final age = int.tryParse(_ageController.text.trim());
+  final weight = double.tryParse(_weightController.text.trim());
+  final height = double.tryParse(_heightController.text.trim());
+
+  if (age == null || weight == null || height == null) {
+    showAlertDialog("Please enter valid numeric values for age, weight, and height.");
+    return false;
+  }
+
+  if (age < 1 || age > 120) {
+    showAlertDialog("Age must be between 1 and 120.");
+    return false;
+  }
+
+  if (weight < 20 || weight > 300) {
+    showAlertDialog("Weight must be between 20kg and 300kg.");
+    return false;
+  }
+
+  if (height < 50 || height > 250) {
+    showAlertDialog("Height must be between 50cm and 250cm.");
+    return false;
+  }
 
     if (_passwordController.text.trim() !=
         _confirmpasswordController.text.trim()) {
@@ -347,13 +364,6 @@ class _RegisterPageState extends State<RegisterPage> {
             actions: [
               TextButton(
                 onPressed: () {
-                  /*Navigator.of(context).pop();
-                  Navigator.push(
-                    context, 
-                    MaterialPageRoute(
-                      builder: (context) => QuestionPage(),
-                      ),
-                    );*/
                   Navigator.of(context).pop();
                   widget.showLoginPage(); // Uncommented to navigate to login
                 },

@@ -28,23 +28,33 @@ class _ProfilePageState extends State<ProfilePage> {
   Color studyColor = Colors.grey;
   Color meditateColor = Colors.grey;
   Color balanceColor = Colors.grey;
+  bool _isImagePickerActive = false;
 
   void selectImage() async {
+    if (_isImagePickerActive) return; // Prevent multiple calls
+    _isImagePickerActive = true;
+
     final ImagePicker picker = ImagePicker();
-    final XFile? pickedImage =
-        await picker.pickImage(source: ImageSource.gallery);
+    try {
+      final XFile? pickedImage =
+          await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedImage != null) {
-      // Call compressAndEncodeImage to compress and encode the image
-      String encodedImage = await compressAndEncodeImage(pickedImage);
+      if (pickedImage != null) {
+        // Call compressAndEncodeImage to compress and encode the image
+        String encodedImage = await compressAndEncodeImage(pickedImage);
 
-      setState(() {
-        _encodedImage = encodedImage; // Store the encoded image
-        _image = base64Decode(encodedImage); // Decode to display the image
-      });
+        setState(() {
+          _encodedImage = encodedImage; // Store the encoded image
+          _image = base64Decode(encodedImage); // Decode to display the image
+        });
 
-      // Save the stripped and encoded image to Firestore
-      await saveImageToFirestore(encodedImage);
+        // Save the stripped and encoded image to Firestore
+        await saveImageToFirestore(encodedImage);
+      }
+    } catch (e) {
+      print("Error picking image: $e");
+    } finally {
+      _isImagePickerActive = false; // Reset the flag
     }
   }
 
